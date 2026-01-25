@@ -1,3 +1,8 @@
+'''
+models.py is blueprint of how data tables are structured in the database.
+Like user table, it defines what fields are there, their types, constraints etc.
+'''
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
