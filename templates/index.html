@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Personal Finance and Expense Tracker {% endblock %}
+
+{% block content %}
+  <h1>Personal Finance and Expense Tracker</h1>
+
+  <p>Welcome to your personal finance and expense tracking application!</p>
+  <p>Track your expenses and manage your finances effectively.</p>
+  <p>
+    <a href="{{ url_for('login') }}">Login</a> to get started or    
+    <a href="{{ url_for('register') }}">Create an Account</a> if you are a new user.
+  </p>
+
+{% endblock %}
