@@ -92,7 +92,6 @@ def budgets_list():
 def analytics():
     pass
 
-
 # -------------------
 # Settings / Profile
 # -------------------
