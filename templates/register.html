@@ -2,8 +2,8 @@
 {% block title %}Create Your Account{% endblock %}
 
 {% block content %}
-  <h2>Register</h2>
-
+ <div class="register">
+  <h2> Create an Account!</h2>
   <form method="POST">
     {{ form.hidden_tag() }}
 
@@ -24,4 +24,5 @@
 
     <button type="submit">Register</button>
   </form>
+  </div>
 {% endblock %}
