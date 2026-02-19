@@ -1,0 +1,252 @@
+body{
+    background-color: lightskyblue;
+    background-image: url('/static/scsu2.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1{
+    text-align: center;
+}
+
+p{
+    font-family: inherit;
+}
+
+h2{
+    font-family: inherit;
+}
+
+.welcome{
+    text-align: center;
+    border: 2px solid lightskyblue;
+    padding: 20px;
+    padding-top: 20px;
+    margin: 20px auto;
+    margin-top: 200px;
+    border-radius: 15px;
+    background-color: #fff;
+    width: 90%;
+    max-width: 700px;
+    height: 600px;
+    min-height: 300px;
+    box-sizing: border-box;
+    font-size: 25px;
+    
+}
+
+.header {
+    background-color: #333;
+    color: white;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+.header ul {
+    list-style-type: none;
+    margin: 0;
+    margin-right: 2450px;
+    padding: 0;
+    display: flex;
+    gap: 0;
+    justify-content: center;
+}
+
+.header li {
+    margin: 0;
+    font-family: inherit;
+}
+
+.header a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 15px 20px;
+    transition: background-color 0.3s ease;
+    font-weight: 500;
+}
+
+.header a:hover {
+    background-color: #555;
+}
+
+
+.header2 {
+    background-color: #333;
+    color: white;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+.header2 ul {
+    list-style-type: none;
+    margin: 0;
+    margin-right: 2150px;
+    padding: 0;
+    display: flex;
+    gap: 0;
+    justify-content: center;
+}
+
+.header2 li {
+    margin: 0;
+    font-family: inherit;
+}
+
+.header2 a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 15px 20px;
+    transition: background-color 0.3s ease;
+    font-weight: 500;
+}
+
+.header2 a:hover {
+    background-color: #555;
+}
+
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-primary {
+    background-color: #4CAF50;
+    color: white;
+    margin-top: -100px;
+}
+
+.btn-primary:hover {
+    background-color: #45a049;
+
+}
+
+.btn-secondary {
+    background-color: #2196F3;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #0b7dda;
+}
+
+/* Form responsiveness */
+form {
+    max-width: 100%;
+}
+
+form p {
+    margin: 15px 0;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"] {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+form button[type="submit"] {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    width: 100%;
+    max-width: 300px;
+    margin-top: 15px;
+}
+
+form button[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+
+.container {
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 5px;
+    }
+
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form button[type="submit"] {
+        max-width: 100%;
+    }
+}
+
+.login2{
+    text-align: center;
+    border: 2px solid lightskyblue;
+    padding: 50px;
+    margin: 20px auto;
+    margin-top: 200px;
+    border-radius: 15px;
+    background-color: #fff;
+    width: 90%;
+    max-width: 700px;
+    height: 500px;
+    min-height: 300px;
+    box-sizing: border-box;
+    font-size: 20px;
+}
+
+.register{
+     text-align: center;
+    border: 2px solid lightskyblue;
+    padding: 0px;
+    margin: 20px auto;
+    margin-top: 200px;
+    border-radius: 15px;
+    background-color: #fff;
+    width: 90%;
+    max-width: 700px;
+    height: 500px;
+    min-height: 300px;
+    box-sizing: border-box;
+    font-size: 20px;
+}
+
+
+.user{
+    margin-left: 130px;
+}
+
+.dashmessage{
+   text-align: center;
+    
+}
+

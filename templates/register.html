@@ -2,13 +2,13 @@
 {% block title %}Create Your Account{% endblock %}
 
 {% block content %}
-  <h2>Register</h2>
-
+ <div class="register">
+  <h2> Create an Account!</h2>
   <form method="POST">
     {{ form.hidden_tag() }}
 
     <p>
-      {{ form.username.label }}<br>
+      Create your username:<br> 
       {{ form.username() }}
     </p>
 
@@ -17,7 +17,8 @@
     {% endfor %}
 
     <p>
-      {{ form.email.label }}<br>
+      Enter your email:
+      <br>
       {{ form.email() }}
     </p>
 
@@ -26,12 +27,12 @@
     {% endfor %}
 
     <p>
-      {{ form.password.label }}<br>
+      Create a UNIQUE password:<br>
       {{ form.password() }}
     </p>
 
     <p>
-      {{ form.confirm_password.label }}<br>
+      Verify password:<br>
       {{ form.confirm_password() }}
     </p>
 
@@ -41,4 +42,5 @@
 
     <button type="submit">Register</button>
   </form>
+  </div>
 {% endblock %}

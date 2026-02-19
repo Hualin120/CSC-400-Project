@@ -3,18 +3,18 @@
 
 {% block content %}
 <div class="login2">
-  <h2>Login</h2>
+  <h2> Login here!</h2>
 
   <form method="post">
     {{ form.hidden_tag() }}
 
     <p>
-      {{ form.identifier.label }}<br>
+      Enter your email:<br>
       {{ form.identifier() }}
     </p>
 
     <p>
-      {{ form.password.label }}<br>
+      Enter your password:<br>
       {{ form.password() }}
     </p>
 
