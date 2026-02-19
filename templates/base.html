@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> SpeedSense </title>
+    <title> SpendSense </title>
+    <link rel="icon" type="'image/x-icon" href="{{ url_for('static', filename='SpeedSense.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
 </head>
@@ -13,18 +14,21 @@
         {% block navbar %}
             
             {% if current_user.is_authenticated %}
+                <div class="header2">
+                
                 <ul>
                     <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                    <li><a href="{{ url_for('profile') }}">profile</a></li>
+                    <li><a href="{{ url_for('profile') }}">Your Profile</a></li>
                     <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    
                 </ul>
+                </div>
 
             {% else %}
                 <div class="header">
                 <ul>
                     <li><a href="{{ url_for('index') }}">Home</a></li>
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                    <li><a href="{{ url_for('register') }}">Register</a></li>
+                    
                 </ul>
                 </div>
             {% endif %}

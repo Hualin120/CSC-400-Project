@@ -3,7 +3,12 @@
 
 {% block content %}
   <h1>Dashboard</h1>
-    <p>Welcome, {{ current_user.username }}!</p>
+  <div class="user">
+    <p>Welcome, @{{ current_user.username }}!</p>
+    <p> Status: Financially Stable!</p>
+  </div>
+  <div class="dashmessage">
     <p>This is your personal dashboard where you can manage your finances and track your expenses.</p>
+    </div>
     
 {% endblock %}
