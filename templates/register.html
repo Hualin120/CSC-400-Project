@@ -12,15 +12,32 @@
       {{ form.username() }}
     </p>
 
+    {% for error in form.username.errors %}
+      <span style="color:red;">{{ error }}</span>
+    {% endfor %}
+
     <p>
       {{ form.email.label }}<br>
       {{ form.email() }}
     </p>
 
+    {% for error in form.email.errors %}
+      <span style="color:red;">{{ error }}</span>
+    {% endfor %}
+
     <p>
       {{ form.password.label }}<br>
       {{ form.password() }}
     </p>
+
+    <p>
+      {{ form.confirm_password.label }}<br>
+      {{ form.confirm_password() }}
+    </p>
+
+    {% for error in form.confirm_password.errors %}
+      <span style="color:red;">{{ error }}</span>
+    {% endfor %}
 
     <button type="submit">Register</button>
   </form>

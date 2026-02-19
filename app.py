@@ -5,6 +5,8 @@ import os
 from forms import LoginForm, RegisterForm
 from models import db, User
 from dotenv import load_dotenv
+from sqlalchemy import or_
+
 
 load_dotenv(override=True)
 
@@ -76,10 +78,11 @@ def login():
     form = LoginForm()
 
     if form.validate_on_submit():
-        email = form.email.data.lower().strip()
+        identifier = form.identifier.data.strip()
         password = form.password.data
 
-        user = User.query.filter_by(email=email).first()
+        # To check users username or email is correct. So use can login with username or email
+        user = User.query.filter(or_(User.email == identifier.lower(), User.username == identifier)).first()
 
         # Check hashed password stored in password column
         if user and check_password_hash(user.password, password):
