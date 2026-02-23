@@ -19,3 +19,18 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=1, max=128)])
     submit = SubmitField('Login')
 
+class VerifyEmailForm(FlaskForm):
+    code = StringField("Verification Code", validators=[DataRequired(), Length(min=6, max=6)])
+    submit = SubmitField("Verify")
+
+class ForgotPasswordForm(FlaskForm):
+    email = EmailField("Email", validators=[DataRequired(), Email()])
+    submit = SubmitField("Send reset link")
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField("New Password", validators=[DataRequired(), Length(min=8, max=128)])
+    confirm_password = PasswordField(
+        "Confirm Password",
+        validators=[DataRequired(), EqualTo("password", message="Passwords must match.")]
+    )
+    submit = SubmitField("Reset Password")
