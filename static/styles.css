@@ -225,9 +225,9 @@ form button[type="submit"]:hover {
 }
 
 .register{
-     text-align: center;
+    text-align: center;
     border: 2px solid lightskyblue;
-    padding: 0px;
+    padding: 50px;   /* change this */
     margin: 20px auto;
     margin-top: 200px;
     border-radius: 15px;
@@ -250,3 +250,65 @@ form button[type="submit"]:hover {
     
 }
 
+/* Flash messages (matches your clean white-card look) */
+.flash{
+    width: 100%;
+    max-width: 520px;
+    margin: 10px auto 15px auto;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+}
+
+.flash-wrap{
+    width: 90%;
+    max-width: 700px;
+    margin: 20px auto 0 auto;
+}
+
+.flash.success{
+    background: #e8f5e9;
+    border-color: #a5d6a7;
+    color: #1b5e20;
+}
+
+.flash.danger{
+    background: #ffebee;
+    border-color: #ef9a9a;
+    color: #b71c1c;
+}
+
+.flash.warning{
+    background: #fff8e1;
+    border-color: #ffe082;
+    color: #8a6d00;
+}
+
+.flash.info{
+    background: #e3f2fd;
+    border-color: #90caf9;
+    color: #0d47a1;
+}
+
+/* Link row under forms */
+.link-row{
+    margin-top: 14px;
+    font-size: 16px;
+}
+
+.link-row a{
+    color: #0b7dda;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link-row a:hover{
+    text-decoration: underline;
+}
+
+.link-row .sep{
+    margin: 0 8px;
+    color: #999;
+}

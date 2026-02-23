@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Verify Email{% endblock %}
+
+{% block content %}
+<div class="login2">
+  <h2>Verify your email</h2>
+
+  <form method="post" action="{{ url_for('verify_email') }}">
+    {{ form.hidden_tag() }}
+
+    <p>
+      Enter the 6-digit code we sent to your email:<br>
+      {{ form.code(autocomplete="one-time-code", inputmode="numeric") }}
+    </p>
+
+    <button type="submit">Verify</button>
+  </form>
+
+  <div class="link-row">
+    <a href="{{ url_for('resend_verify_email') }}">Resend code</a>
+    <span class="sep">|</span>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</div>
+{% endblock %}
