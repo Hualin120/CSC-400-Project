@@ -16,7 +16,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///sit
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-
+@app.before_request
+def ensure_tables_exits():
+    db.create_all()
+    
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
