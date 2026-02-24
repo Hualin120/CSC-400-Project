@@ -1,9 +1,9 @@
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from forms import LoginForm, RegisterForm
-from models import db, User
+from forms import LoginForm, RegisterForm, TransactionForm
+from models import db, User, Transaction
 from dotenv import load_dotenv
 from sqlalchemy import or_
 
@@ -111,10 +111,63 @@ def dashboard():
 # -------------------
 # OTHER ROUTES
 # -------------------
-@app.route("/transactions")
+# expenses and incomes
+@app.route("/transactions", methods=['GET'])
 @login_required
-def transactions_list():
-    pass
+def transactions():
+    filter_type = request.args.get('filter', 'all')
+    
+    query = Transaction.query.filter_by(user_id=current_user.id)
+
+    if filter_type == 'income':
+        query = query.filter_by(type='income')
+
+    elif filter_type == 'expense':
+        query = query.filter_by(type='expense')
+    
+    transactions = query.order_by(Transaction.date.desc()).all()
+
+    form = TransactionForm()
+    
+    return render_template('transactions.html', transactions=transactions, current_filter=filter_type, form=form)
+
+
+@app.route('/add_transaction', methods=['POST'])
+@login_required
+def add_transaction():
+    form = TransactionForm()
+    
+    if form.validate_on_submit():
+        transaction = Transaction(
+            type=form.type.data,
+            description=form.description.data,
+            category=form.category.data,
+            amount=form.amount.data,
+            user_id=current_user.id
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        flash('Transaction added successfully!', 'success')
+
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{getattr(form, field).label.text}: {error}', 'danger')
+    
+    return redirect(url_for('transactions'))
+
+
+
+@app.route('/delete_transaction/<int:id>', methods=['POST'])
+@login_required
+def delete_transaction(id):
+    transaction = Transaction.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    db.session.delete(transaction)
+    db.session.commit()
+    flash('Transaction deleted.', 'success')
+    return redirect(url_for('transactions'))
+
+
 
 @app.route("/budgets")
 @login_required
