@@ -13,11 +13,14 @@
         {% block navbar %}
             {% if current_user.is_authenticated %}
                 <div class="header2">
-                    <ul>
-                        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                        <li><a href="{{ url_for('profile') }}">Your Profile</a></li>
-                        <li><a href="{{ url_for('logout') }}">Logout</a></li>
-                    </ul>
+                
+                <ul>
+                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('transactions') }}">Transactions</a></li>
+                    <li><a href="{{ url_for('profile') }}">Your Profile</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    
+                </ul>
                 </div>
             {% else %}
                 <div class="header">

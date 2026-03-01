@@ -4,8 +4,9 @@ Like, when user wants to register or login, forms.py defines the fields and vali
 '''
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, Length, EqualTo
+from wtforms import StringField, EmailField, PasswordField, SelectField, FloatField, DateField, SubmitField
+from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, Optional
+from datetime import datetime
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=30)])
@@ -34,3 +35,19 @@ class ResetPasswordForm(FlaskForm):
         validators=[DataRequired(), EqualTo("password", message="Passwords must match.")]
     )
     submit = SubmitField("Reset Password")
+
+class TransactionForm(FlaskForm):
+    type = SelectField('Transaction type', choices=[('income', 'Income'), ('expense', 'Expense')], validators=[DataRequired()])
+    description = StringField('Description', validators=[DataRequired(), Length(max=120)])
+    
+    category = SelectField('Category', choices=[
+        # Income category
+        ('salary', 'Salary'), ('bonus', 'Bonus'), ('part_time', 'Part Time'),
+        # Expense category
+        ('food', 'Food'), ('entertainment', 'Entertainment'), ('shopping', 'Shopping'), ('other', 'Other')
+        ], validators=[DataRequired()])
+    
+    amount = FloatField('amount', validators=[DataRequired(), NumberRange(min=0.01)])
+
+    date = DateField('date', validators=[Optional()], default=datetime.today)
+    submit = SubmitField('Add Transaction')

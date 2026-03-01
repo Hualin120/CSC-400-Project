@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Transactions</h1>
+    
+    <!-- Filter Buttons -->
+    <div>
+        <a href="{{ url_for('transactions', filter='all') }}">All</a>
+        <a href="{{ url_for('transactions', filter='income') }}">Income</a>
+        <a href="{{ url_for('transactions', filter='expense') }}">Expense</a>
+    </div>
+    
+    <!-- Add Transaction Form -->
+    <h3>Add New Transaction</h3>
+    <form method="POST" action="{{ url_for('add_transaction') }}">
+        {{ form.hidden_tag() }}
+        
+        <div>
+            {{ form.type.label }} {{ form.type() }}
+        </div>
+        <div>
+            {{ form.amount.label }} {{ form.amount() }}
+        </div>
+        <div>
+            {{ form.category.label }} {{ form.category() }}
+        </div>
+        <div>
+            {{ form.description.label }} {{ form.description() }}
+        </div>
+        <div>
+            {{ form.submit() }}
+        </div>
+        
+    </form>
+    
+    <!-- Transactions List -->
+    <h3>Transaction History</h3>
+    
+    {% if transactions %}
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Action</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+            {% for t in transactions %}
+            <tr>
+                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ t.type }}</td>
+                <td>{{ t.category }}</td>
+                <td>{{ t.description }}</td>
+                <td>{{ t.amount }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('delete_transaction', id=t.id) }}">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    {% else %}
+    <p>No transactions yet.</p>
+    {% endif %}
+    
+</div>
+{% endblock %}
