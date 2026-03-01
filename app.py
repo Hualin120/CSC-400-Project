@@ -1,20 +1,23 @@
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from forms import LoginForm, RegisterForm, TransactionForm
-from models import db, User, Transaction
 from dotenv import load_dotenv
-load_dotenv(override=True)
-print("MAILJET_API_KEY loaded?", bool(os.getenv("MAILJET_API_KEY")))
-print("MAILJET_API_SECRET loaded?", bool(os.getenv("MAILJET_API_SECRET")))
 from sqlalchemy import or_
 from datetime import datetime, timedelta
 
-from forms import LoginForm, RegisterForm, VerifyEmailForm, ForgotPasswordForm, ResetPasswordForm
-from models import db, User, EmailToken, sha256
-from email_utils import send_email
+from forms import (
+    LoginForm, RegisterForm, VerifyEmailForm, ForgotPasswordForm,
+    ResetPasswordForm, TransactionForm
+)
 
+from models import db, User, Transaction, EmailToken, sha256
+from email_utils import send_email
+from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
+
+load_dotenv(override=True)
+print("MAILJET_API_KEY loaded?", bool(os.getenv("MAILJET_API_KEY")))
+print("MAILJET_API_SECRET loaded?", bool(os.getenv("MAILJET_API_SECRET")))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
@@ -22,29 +25,61 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///sit
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+
 @app.before_request
 def ensure_tables_exits():
     db.create_all()
-    
-@app.before_request
-def ensure_tables_exits():
-    db.create_all()
-    
+
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 print("Connected to:", app.config["SQLALCHEMY_DATABASE_URI"])
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
-
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# -------------------
+# LOGIN
+# -------------------
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        identifier = form.identifier.data.strip()
+        password = form.password.data
+
+        user = User.query.filter(
+            or_(User.email == identifier.lower(), User.username == identifier)
+        ).first()
+
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+
+            if not getattr(user, "is_email_verified", False):
+                return redirect(url_for("verify_email"))
+
+            return redirect(url_for('dashboard'))
+
+        flash('Login failed. Check your email/username and password.', 'danger')
+
+    return render_template('login.html', form=form)
+
+
+# -------------------
+# LOGOUT
+# -------------------
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("login"))
 
 # -------------------
 # REGISTER (send OTP)
@@ -57,58 +92,33 @@ def register():
         email = form.email.data.lower().strip()
         username = form.username.data.strip()
 
-        # Prevent duplicate email
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'danger')
             return render_template('register.html', form=form)
 
-        # Prevent duplicate username
         if User.query.filter_by(username=username).first():
             flash('Username already taken.', 'danger')
             return render_template('register.html', form=form)
 
-        # Hash password
         hashed = generate_password_hash(form.password.data, method='pbkdf2:sha256')
 
-        # Store hash in password column
         user = User(username=username, email=email, password=hashed)
         db.session.add(user)
         db.session.commit()
 
-        # Create verification OTP (6 digits) and email it
-        code = EmailToken.new_otp()
-        tok = EmailToken(
-            user_id=user.id,
-            purpose="verify",
-            token_hash=sha256(code),
-            expires_at=datetime.utcnow() + timedelta(minutes=10),
-            used=False
+        # Send OTP (auth_utils always generates a fresh code)
+        send_verification_code(
+            user,
+            subject="Verify your SpendSense account",
         )
-        db.session.add(tok)
-        db.session.commit()
 
-        html = f"""
-        <p>Welcome to <b>SpendSense</b>!</p>
-        <p>Your verification code is:</p>
-        <h2 style="letter-spacing:2px;">{code}</h2>
-        <p>This code expires in 10 minutes.</p>
-        """
-
-        try:
-            send_email(user.email, "Verify your SpendSense account", html, to_name=user.username)
-        except Exception as e:
-            # If email fails, user still exists; you can let them resend code later
-            print("Mailjet send failed:", e)
-            flash("Account created, but we couldn't send the verification email. Try resending the code.", "warning")
-
-        # Optional: log them in so they can access /verify-email immediately
         login_user(user)
-
         flash("Account created! Check your email for a verification code.", "success")
+        session["skip_verify_autosend_once"] = True
+        session["verify_last_sent_at"] = datetime.utcnow().isoformat()
         return redirect(url_for('verify_email'))
 
     return render_template('register.html', form=form)
-
 
 # -------------------
 # VERIFY EMAIL (OTP)
@@ -116,16 +126,31 @@ def register():
 @app.route('/verify-email', methods=['GET', 'POST'])
 @login_required
 def verify_email():
-    # Already verified? Send to dashboard
     if getattr(current_user, "is_email_verified", False):
         return redirect(url_for("dashboard"))
 
     form = VerifyEmailForm()
 
+    # On first visit (GET), send a code right away (cooldown prevents spam on refresh)
+    if request.method == "GET":
+        if session.pop("skip_verify_autosend_once", False):
+            return render_template("verify_email.html", form=form)
+        
+        now = datetime.utcnow()
+        last_sent_iso = session.get("verify_last_sent_at")
+        last_sent = datetime.fromisoformat(last_sent_iso) if last_sent_iso else None
+
+        if (not last_sent) or (now - last_sent > timedelta(seconds=60)):
+            send_verification_code(
+                current_user,
+                subject="Verify your SpendSense account",
+                flash_on_success="We sent a verification code to your email."
+            )
+            session["verify_last_sent_at"] = now.isoformat()
+
     if form.validate_on_submit():
         code = form.code.data.strip()
 
-        # get the newest active verify token
         tok = (EmailToken.query
                .filter_by(user_id=current_user.id, purpose="verify", used=False)
                .order_by(EmailToken.created_at.desc())
@@ -159,86 +184,18 @@ def resend_verify_email():
     if getattr(current_user, "is_email_verified", False):
         return redirect(url_for("dashboard"))
 
-    code = EmailToken.new_otp()
-    tok = EmailToken(
-        user_id=current_user.id,
-        purpose="verify",
-        token_hash=sha256(code),
-        expires_at=datetime.utcnow() + timedelta(minutes=10),
-        used=False
-    )
-    db.session.add(tok)
-    db.session.commit()
-
-    html = f"""
-    <p>Your new SpendSense verification code is:</p>
-    <h2 style="letter-spacing:2px;">{code}</h2>
-    <p>This code expires in 10 minutes.</p>
-    """
-
-    try:
-        send_email(current_user.email, "Your new SpendSense verification code", html, to_name=current_user.username)
-        flash("New code sent! Check your email.", "info")
-    except Exception as e:
-        print("Mailjet send failed:", e)
-        flash("Could not send email right now. Please try again.", "danger")
-
-    return redirect(url_for("verify_email"))
-
-
-# -------------------
-# LOGIN
-# -------------------
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-
-    if form.validate_on_submit():
-        identifier = form.identifier.data.strip()
-        password = form.password.data
-
-        user = User.query.filter(
-            or_(User.email == identifier.lower(), User.username == identifier)
-        ).first()
-
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            flash('Login successful!', 'success')
-
-            # If you want to force verification before using app:
-            if not getattr(user, "is_email_verified", False):
-                return redirect(url_for("verify_email"))
-
-            return redirect(url_for('dashboard'))
-
-        flash('Login failed. Check your email/username and password.', 'danger')
-
-    return render_template('login.html', form=form)
-
-
-# -------------------
-# LOGOUT
-# -------------------
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    flash("You have been logged out.", "info")
-    return redirect(url_for("login"))
-
-
-# -------------------
-# DASHBOARD
-# -------------------
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    # Optional: enforce verification
-    if not getattr(current_user, "is_email_verified", False):
+    # ✅ Rate limit resends: max 3 per 15 minutes (DB-based)
+    if not can_resend_verify_code(current_user.id, max_in_window=3, window_minutes=15):
+        flash("Too many resend attempts. Please wait a bit and try again.", "warning")
+        session["skip_verify_autosend_once"] = True
         return redirect(url_for("verify_email"))
 
-    return render_template('dashboard.html')
-
+    send_verification_code(
+        current_user,
+        subject="Your new SpendSense verification code",
+        flash_on_success="New code sent! Check your email."
+    )
+    return redirect(url_for("verify_email"))
 
 # -------------------
 # FORGOT PASSWORD (send link)
@@ -251,7 +208,6 @@ def forgot_password():
         email = form.email.data.lower().strip()
         user = User.query.filter_by(email=email).first()
 
-        # Always show same response (prevents email enumeration)
         flash("If that email exists, a reset link was sent.", "info")
 
         if user:
@@ -269,11 +225,8 @@ def forgot_password():
             base = os.environ.get("APP_BASE_URL", "http://127.0.0.1:5000")
             link = f"{base}/reset-password/{raw}"
 
-            html = f"""
-            <p>Click the link below to reset your SpendSense password (expires in 30 minutes):</p>
-            <p><a href="{link}">{link}</a></p>
-            """
-
+            html = build_reset_password_html(user.username, link)
+            
             try:
                 send_email(user.email, "Reset your SpendSense password", html, to_name=user.username)
             except Exception as e:
@@ -311,26 +264,33 @@ def reset_password(raw_token):
 
 
 # -------------------
-# OTHER ROUTES (placeholders)
+# DASHBOARD
 # -------------------
-# expenses and incomes
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    if not getattr(current_user, "is_email_verified", False):
+        return redirect(url_for("verify_email"))
+    return render_template('dashboard.html')
+
+# -------------------
+# TRANSACTIONS
+# -------------------
 @app.route("/transactions", methods=['GET'])
 @login_required
 def transactions():
     filter_type = request.args.get('filter', 'all')
-    
+
     query = Transaction.query.filter_by(user_id=current_user.id)
 
     if filter_type == 'income':
         query = query.filter_by(type='income')
-
     elif filter_type == 'expense':
         query = query.filter_by(type='expense')
-    
-    transactions = query.order_by(Transaction.date.desc()).all()
 
+    transactions = query.order_by(Transaction.date.desc()).all()
     form = TransactionForm()
-    
+
     return render_template('transactions.html', transactions=transactions, current_filter=filter_type, form=form)
 
 
@@ -338,7 +298,7 @@ def transactions():
 @login_required
 def add_transaction():
     form = TransactionForm()
-    
+
     if form.validate_on_submit():
         transaction = Transaction(
             type=form.type.data,
@@ -350,14 +310,12 @@ def add_transaction():
         db.session.add(transaction)
         db.session.commit()
         flash('Transaction added successfully!', 'success')
-
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f'{getattr(form, field).label.text}: {error}', 'danger')
-    
-    return redirect(url_for('transactions'))
 
+    return redirect(url_for('transactions'))
 
 
 @app.route('/delete_transaction/<int:id>', methods=['POST'])
@@ -370,23 +328,23 @@ def delete_transaction(id):
     return redirect(url_for('transactions'))
 
 
-def transactions_list():
-    return "Transactions page placeholder"
-
 @app.route("/budgets")
 @login_required
 def budgets_list():
     return "Budgets page placeholder"
+
 
 @app.route("/analytics")
 @login_required
 def analytics():
     return "Analytics page placeholder"
 
+
 @app.route("/settings")
 @login_required
 def settings():
     return "Settings page placeholder"
+
 
 @app.route('/profile')
 @login_required

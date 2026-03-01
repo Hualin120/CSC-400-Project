@@ -1,3 +1,10 @@
+/* =========================
+   GLOBAL / BASE
+   ========================= */
+* {
+    box-sizing: border-box;
+}
+
 body{
     background-color: lightskyblue;
     background-image: url('/static/scsu2.png');
@@ -12,32 +19,22 @@ h1{
     text-align: center;
 }
 
-p{
-    font-family: inherit;
-}
-
 h2{
     font-family: inherit;
 }
 
-.welcome{
-    text-align: center;
-    border: 2px solid lightskyblue;
-    padding: 20px;
-    padding-top: 20px;
-    margin: 20px auto;
-    margin-top: 200px;
-    border-radius: 15px;
-    background-color: #fff;
-    width: 90%;
-    max-width: 700px;
-    height: 600px;
-    min-height: 300px;
-    box-sizing: border-box;
-    font-size: 25px;
-    
+p{
+    font-family: inherit;
 }
 
+/* Layout container */
+.container {
+    padding: 0 10px;
+}
+
+/* =========================
+   NAVBAR
+   ========================= */
 .header {
     background-color: #333;
     color: white;
@@ -73,7 +70,6 @@ h2{
 .header a:hover {
     background-color: #555;
 }
-
 
 .header2 {
     background-color: #333;
@@ -111,7 +107,9 @@ h2{
     background-color: #555;
 }
 
-
+/* =========================
+   BUTTONS (generic)
+   ========================= */
 .btn {
     display: inline-block;
     padding: 10px 20px;
@@ -133,7 +131,6 @@ h2{
 
 .btn-primary:hover {
     background-color: #45a049;
-
 }
 
 .btn-secondary {
@@ -145,7 +142,76 @@ h2{
     background-color: #0b7dda;
 }
 
-/* Form responsiveness */
+/* =========================
+   PAGES / CARDS
+   ========================= */
+.welcome{
+    text-align: center;
+    border: 2px solid lightskyblue;
+    padding: 20px;
+    padding-top: 20px;
+    margin: 20px auto;
+    margin-top: 200px;
+    border-radius: 15px;
+    background-color: #fff;
+    width: 90%;
+    max-width: 700px;
+    height: 600px;
+    min-height: 300px;
+    font-size: 25px;
+}
+
+.login2{
+    text-align: center;
+    border: 2px solid lightskyblue;
+    padding: 50px;
+    margin: 20px auto;
+    margin-top: 200px;
+    border-radius: 15px;
+    background-color: #fff;
+    width: 90%;
+    max-width: 700px;
+
+    height: 500px;
+    min-height: 300px;
+
+    font-size: 20px;
+}
+
+.register{
+    text-align: center;
+    border: 2px solid lightskyblue;
+    padding: 50px;
+    margin: 20px auto;
+    margin-top: 200px;
+    border-radius: 15px;
+    background-color: #fff;
+    width: 90%;
+    max-width: 700px;
+
+    height: auto;          
+    min-height: 300px;   
+    font-size: 20px;
+
+    overflow: hidden;
+}
+
+.register form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.register form p {
+    width: 100%;
+    max-width: 300px; 
+    margin: 15px 0;
+    text-align: center;
+}
+
+/* =========================
+   FORMS (global)
+   ========================= */
 form {
     max-width: 100%;
 }
@@ -163,7 +229,6 @@ form input[type="password"] {
     margin-top: 5px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    box-sizing: border-box;
 }
 
 form button[type="submit"] {
@@ -188,69 +253,42 @@ form button[type="submit"]:hover {
     background-color: #45a049;
 }
 
-
-.container {
-    padding: 0 10px;
-    box-sizing: border-box;
-}
-
-
-@media (max-width: 768px) {
-    .container {
-        padding: 0 5px;
-    }
-
-    form input[type="text"],
-    form input[type="email"],
-    form input[type="password"],
-    form button[type="submit"] {
-        max-width: 100%;
-    }
-}
-
-.login2{
+/* Link row under forms */
+.link-row{
+    margin-top: 14px;
+    font-size: 16px;
     text-align: center;
-    border: 2px solid lightskyblue;
-    padding: 50px;
-    margin: 20px auto;
-    margin-top: 200px;
-    border-radius: 15px;
-    background-color: #fff;
-    width: 90%;
-    max-width: 700px;
-    height: 500px;
-    min-height: 300px;
-    box-sizing: border-box;
-    font-size: 20px;
+
+    position: static;
 }
 
-.register{
-    text-align: center;
-    border: 2px solid lightskyblue;
-    padding: 50px;   /* change this */
-    margin: 20px auto;
-    margin-top: 200px;
-    border-radius: 15px;
-    background-color: #fff;
-    width: 90%;
-    max-width: 700px;
-    height: 500px;
-    min-height: 300px;
-    box-sizing: border-box;
-    font-size: 20px;
+.link-row a{
+    color: #0b7dda;
+    text-decoration: none;
+    font-weight: 500;
 }
 
+.link-row a:hover{
+    text-decoration: underline;
+}
 
+.link-row .sep{
+    margin: 0 8px;
+    color: #999;
+}
+
+/* =========================
+   MISC
+   ========================= */
 .user{
     margin-left: 130px;
 }
 
 .dashmessage{
    text-align: center;
-    
 }
 
-/* Flash messages (matches your clean white-card look) */
+/* Flash messages */
 .flash{
     width: 100%;
     max-width: 520px;
@@ -258,7 +296,6 @@ form button[type="submit"]:hover {
     padding: 10px 12px;
     border-radius: 6px;
     font-size: 16px;
-    box-sizing: border-box;
     border: 1px solid #ddd;
 }
 
@@ -292,23 +329,18 @@ form button[type="submit"]:hover {
     color: #0d47a1;
 }
 
-/* Link row under forms */
-.link-row{
-    margin-top: 14px;
-    font-size: 16px;
-}
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 5px;
+    }
 
-.link-row a{
-    color: #0b7dda;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.link-row a:hover{
-    text-decoration: underline;
-}
-
-.link-row .sep{
-    margin: 0 8px;
-    color: #999;
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form button[type="submit"] {
+        max-width: 100%;
+    }
 }

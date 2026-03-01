@@ -10,7 +10,7 @@
 
     <p>
       Enter the 6-digit code we sent to your email:<br>
-      {{ form.code(autocomplete="one-time-code", inputmode="numeric") }}
+      {{ form.code(autocomplete="one-time-code", size=6, maxlength=6, pattern="\d{6}", inputmode="numeric") }}
     </p>
 
     <button type="submit">Verify</button>

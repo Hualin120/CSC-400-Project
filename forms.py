@@ -5,14 +5,14 @@ Like, when user wants to register or login, forms.py defines the fields and vali
 
 from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, PasswordField, SelectField, FloatField, DateField, SubmitField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, Optional
+from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, Optional, Regexp
 from datetime import datetime
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=30)])
     email = EmailField('Email', validators=[DataRequired(), Email(), Length(max=50)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8, max=128)])
-    confirm_password = PasswordField('Comfirm password', validators=[DataRequired(), EqualTo('password', message='Passwords must match.')])
+    confirm_password = PasswordField('Confirm password', validators=[DataRequired(), EqualTo('password', message='Passwords must match.')])
     submit = SubmitField('Register')
 
 class LoginForm(FlaskForm):
@@ -21,9 +21,16 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 class VerifyEmailForm(FlaskForm):
-    code = StringField("Verification Code", validators=[DataRequired(), Length(min=6, max=6)])
+    code = StringField(
+        "Verification Code",
+        validators=[
+            DataRequired(),
+            Length(min=6, max=6),
+            Regexp(r"^\d{6}$", message="Code must be exactly 6 digits.")
+        ]
+    )
     submit = SubmitField("Verify")
-
+    
 class ForgotPasswordForm(FlaskForm):
     email = EmailField("Email", validators=[DataRequired(), Email()])
     submit = SubmitField("Send reset link")

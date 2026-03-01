@@ -10,7 +10,7 @@ def send_email(to_email: str, subject: str, html: str, to_name: str = ""):
 
     if not mail_enabled:
         print("\n" + "=" * 70)
-        print("📧 DEV EMAIL (NOT SENT)")
+        print("DEV EMAIL (NOT SENT)")
         print(f"To: {to_email}")
         print(f"Subject: {subject}")
         print("HTML:")
