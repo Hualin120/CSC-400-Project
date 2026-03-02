@@ -184,7 +184,7 @@ def resend_verify_email():
     if getattr(current_user, "is_email_verified", False):
         return redirect(url_for("dashboard"))
 
-    # ✅ Rate limit resends: max 3 per 15 minutes (DB-based)
+    # Rate limit resends: max 3 per 15 minutes (DB-based)
     if not can_resend_verify_code(current_user.id, max_in_window=3, window_minutes=15):
         flash("Too many resend attempts. Please wait a bit and try again.", "warning")
         session["skip_verify_autosend_once"] = True
@@ -195,6 +195,7 @@ def resend_verify_email():
         subject="Your new SpendSense verification code",
         flash_on_success="New code sent! Check your email."
     )
+
     return redirect(url_for("verify_email"))
 
 # -------------------
@@ -206,7 +207,7 @@ def forgot_password():
 
     if form.validate_on_submit():
         email = form.email.data.lower().strip()
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(email = email).first()
 
         flash("If that email exists, a reset link was sent.", "info")
 

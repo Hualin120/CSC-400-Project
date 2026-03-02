@@ -100,7 +100,7 @@ def build_reset_password_html(username: str, reset_link: str) -> str:
 
               <tr>
                 <td align="center" style="font-size:12px;color:#888;padding-top:10px;line-height:1.4;">
-                  If the button doesn’t work, copy and paste this link into your browser:
+                  If the button does not work, copy and paste this link into your browser:
                   <br>
                   <a href="{reset_link}" style="color:#0d47a1;word-break:break-all;">{reset_link}</a>
                 </td>
@@ -114,7 +114,7 @@ def build_reset_password_html(username: str, reset_link: str) -> str:
 
               <tr>
                 <td align="center" style="font-size:12px;color:#aaa;line-height:1.4;">
-                  If you didn’t request this, you can ignore this email.
+                  If you did not request this, please contact support.
                   <br><br>
                   © 2026 SpendSense
                 </td>
