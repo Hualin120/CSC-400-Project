@@ -4,7 +4,8 @@
 {% block content %}
 
   <div class="welcome">
-    
+    <br>
+    <br>
     <img src="{{ url_for('static', filename='SpendSense2.png') }}" width="500px" height="200px">
 
   <p>Welcome to SpendSense, your personal finance and expense tracking application!</p>
@@ -12,7 +13,6 @@
   <p>
     <div class="login">
     <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
-    <br>
     <br>
     <a href="{{ url_for('register') }}" class="btn btn-secondary">Create an Account</a>
   </p>

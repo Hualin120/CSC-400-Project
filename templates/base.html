@@ -6,13 +6,11 @@
     <title> SpendSense </title>
     <link rel="icon" type="'image/x-icon" href="{{ url_for('static', filename='SpeedSense.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-
 </head>
 
 <body>
     <nav>
         {% block navbar %}
-            
             {% if current_user.is_authenticated %}
                 <div class="header2">
                 
@@ -24,24 +22,29 @@
                     
                 </ul>
                 </div>
-
             {% else %}
                 <div class="header">
-                <ul>
-                    <li><a href="{{ url_for('index') }}">Home</a></li>
-                    
-                </ul>
+                    <ul>
+                        <li><a href="{{ url_for('index') }}">Home</a></li>
+                    </ul>
                 </div>
             {% endif %}
-
-        {% endblock %} 
-
+        {% endblock %}
     </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
     <div class="container">
         {% block content %}{% endblock %}
     </div>
 
 </body>
-
 </html>
