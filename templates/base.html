@@ -48,10 +48,12 @@
     <script>
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebar = document.getElementById('sidebar');
+        const body = document.body;
         
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', function() {
                 sidebar.classList.toggle('open');
+                body.classList.toggle('sidebar-open');
             });
             
             // Close sidebar when a link is clicked
@@ -59,6 +61,7 @@
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', function() {
                     sidebar.classList.remove('open');
+                    body.classList.remove('sidebar-open');
                 });
             });
         }

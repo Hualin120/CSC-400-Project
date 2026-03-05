@@ -2,7 +2,18 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
+<div class="profileinfo">
   <h2> {{ user.username }}'s Profile</h2>
   <p>Username: {{ user.username }}</p>
   <p>Email: {{ user.email }}</p>
+</div>
+<div class="change">
+  <form action="/upload-profile-picture" method="post" enctype="multipart/form-data">
+  <label for="profile_picture"> Change your picture? </label>
+  <br>
+  <input type="file" id="profile_picture" name="profile_picture" accept="image/png, image/jpeg, image/jpg">
+  <br>
+  <button type="submit">Upload Image</button>
+</form>
+</div>  
 {% endblock %}
