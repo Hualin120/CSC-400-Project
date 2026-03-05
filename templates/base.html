@@ -12,15 +12,14 @@
     <nav>
         {% block navbar %}
             {% if current_user.is_authenticated %}
-                <div class="header2">
-                
-                <ul>
-                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                    <li><a href="{{ url_for('transactions') }}">Transactions</a></li>
-                    <li><a href="{{ url_for('profile') }}">Your Profile</a></li>
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
-                    
-                </ul>
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <div class="header2" id="sidebar">
+                    <ul>
+                        <li><a href="{{ url_for('dashboard') }}"> Dashboard </a></li>
+                        <li><a href="{{ url_for('transactions') }}"> Transactions </a></li>
+                        <li><a href="{{ url_for('profile') }}"> Your Profile </a></li>
+                        <li><a href="{{ url_for('logout') }}"> Logout </a></li>
+                    </ul>
                 </div>
             {% else %}
                 <div class="header">
@@ -46,5 +45,23 @@
         {% block content %}{% endblock %}
     </div>
 
+    <script>
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('open');
+            });
+            
+            // Close sidebar when a link is clicked
+            const sidebarLinks = sidebar.querySelectorAll('a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    sidebar.classList.remove('open');
+                });
+            });
+        }
+    </script>
 </body>
 </html>

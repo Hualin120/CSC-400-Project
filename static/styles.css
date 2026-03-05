@@ -36,7 +36,7 @@ p{
    NAVBAR
    ========================= */
 .header {
-    background-color: #333;
+    background-color: #000000;
     color: white;
     padding: 0;
     margin: 0;
@@ -71,26 +71,58 @@ p{
     background-color: #555;
 }
 
+.sidebar-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1001;
+    background-color: #1194ff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: #7ed0ff;
+}
+
 .header2 {
-    background-color: #333;
+    background-color: #1194ff;
     color: white;
     padding: 0;
     margin: 0;
-    position: relative;
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    z-index: 999;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    box-shadow: 0p;
+}
+
+.header2.open {
+    left: 0;
 }
 
 .header2 ul {
     list-style-type: none;
     margin: 0;
-    margin-right: 2150px;
     padding: 0;
     display: flex;
+    flex-direction: column;
     gap: 0;
-    justify-content: center;
+    padding-top: 60px;
 }
 
 .header2 li {
     margin: 0;
+    margin-top: 20px;
     font-family: inherit;
 }
 
@@ -101,10 +133,11 @@ p{
     padding: 15px 20px;
     transition: background-color 0.3s ease;
     font-weight: 500;
+    border-bottom: 1px solid #ffffff;
 }
 
 .header2 a:hover {
-    background-color: #555;
+    background-color: #8cbeff;
 }
 
 /* =========================
