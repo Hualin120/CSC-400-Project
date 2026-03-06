@@ -1,3 +1,13 @@
+'''
+When I doing this branch, im just still using @app.route. But when I test it (flask run), it just won't let me test it.
+The reason is because app.py and auth_routhes.py, they both asking each other for information? 
+Like app.py need to import auth_routes,
+and auth_routes.py need to import app, mutual waiting, deadlock.
+
+So I use Blueprint. To separate it. 
+app.py is the main, and auth_routes.py is sub. It will first create app, and then create blueprint.
+Just like an USB, you plug it in, and you could use it immediately. If even you don't have it, it won't affect app.py
+'''
 from flask import Blueprint, redirect, url_for, flash, session, current_app
 from flask_login import login_user
 from models import db, User
