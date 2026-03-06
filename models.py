@@ -24,10 +24,20 @@ class User(db.Model, UserMixin):
     # stores hashed password (pbkdf2:sha256 hash string)
     password = db.Column(db.String(255), nullable=False)
 
+    # To check is OAuth user or not
+    is_oauth_user = db.Column(db.Boolean, nullable=False, default=False)
+
     # NEW: email verification status
     is_email_verified = db.Column(db.Boolean, nullable=False, default=False)
 
-    role = db.Column(db.Enum('user', 'admin', name='user_role'), nullable=False, default='user')
+    # This will record what third-party platform login. Google, github, etc.
+    oauth_provider = db.Column(db.String(20), nullable=True)
+
+    # This will recor an id, so if the users change their email, for example
+    # hualin@gmail.com -> hualin_new@gmail.com. If users do that, there's no way we could find
+    # users' account. This id will also can prevent duplication account creation
+    oauth_id = db.Column(db.String(255), nullable=True)
+
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
 class EmailToken(db.Model):

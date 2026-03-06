@@ -14,6 +14,7 @@ from forms import (
 from models import db, User, Transaction, EmailToken, sha256
 from email_utils import send_email
 from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
+from auth_routes import auth_bp
 
 load_dotenv(override=True)
 print("MAILJET_API_KEY loaded?", bool(os.getenv("MAILJET_API_KEY")))
@@ -25,6 +26,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///sit
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+
+# blue print
+app.register_blueprint(auth_bp)
 
 @app.before_request
 def ensure_tables_exits():
