@@ -32,9 +32,9 @@ def login_google():
         google = get_google_oauth()
         redirect_uri = url_for('auth.authorize_google', _external=True)
 
-        # 1. 生成一个安全的随机字符串作为 nonce
+        # 1. Generate a safe random string as the nonce
         nonce = secrets.token_urlsafe(16)
-        # 2. 将 nonce 存储在 session 中，以便回调时取用
+        # 2. Store the nonce in the session so that it can be retrieved during callbacks.
         session['google_nonce'] = nonce
 
         return google.authorize_redirect(redirect_uri, nonce=nonce)
@@ -56,10 +56,10 @@ def authorize_google():
         
         # getting user infomation
 
-        # 1. 从 session 中取出之前存储的 nonce，并删除它（使用一次后即失效）
+        # 1. Retrieve the previously stored nonce from the session and delete it (it becomes invalid after one use).
         nonce = session.pop('google_nonce', None)
         
-        # 2. 解析用户信息时，将 nonce 作为参数传入
+        # 2. When parsing user information, pass the nonce as a parameter.
         user_info = google.parse_id_token(token, nonce=nonce)
 
         email = user_info.get('email')
