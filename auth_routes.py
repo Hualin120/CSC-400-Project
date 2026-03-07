@@ -36,6 +36,16 @@ def get_google_oauth():
     )
 
 
+'''
+When user click login with google, it will trigger this Blueprint route. Given information from def get_google_oauth(),
+then create nonce.
+
+nonce just like hash password. It's an important security mechanisms. For example, when you go to amusement park,
+the staff will give you a random code(maybe?) when you buy the ticket. When you play any rides, they will ask the code, without it
+you cannot play it.
+
+If someone steal your ticket, but don't have the code, they can't impersonate you.
+'''
 @auth_bp.route('/login/google')
 def login_google():
     try:
@@ -47,6 +57,10 @@ def login_google():
         # 2. Store the nonce in the session so that it can be retrieved during callbacks.
         session['google_nonce'] = nonce
 
+        '''
+        After what we did above, we jump to def authorize_google(), which is the next route in the bottom.
+        Of course, this is after the user has authorized Google.
+        '''
         return google.authorize_redirect(redirect_uri, nonce=nonce)
     
     except Exception as e:
@@ -67,6 +81,9 @@ def authorize_google():
         # getting user infomation
 
         # 1. Retrieve the previously stored nonce from the session and delete it (it becomes invalid after one use).
+        '''
+        Just like what we said above, we checking the 'ticket(code)'
+        '''
         nonce = session.pop('google_nonce', None)
         
         # 2. When parsing user information, pass the nonce as a parameter.
@@ -124,6 +141,10 @@ def authorize_google():
         return redirect(url_for('login'))
 
 
+'''
+For this, just prevent duplicate usernames. 
+If 3 users have the same username in google, we will put a number behind.
+'''
 def generate_unique_username(base_username):
     # Generate unique username
     # remove space, change into lowercase
