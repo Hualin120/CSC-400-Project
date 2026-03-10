@@ -1,21 +1,457 @@
-{% extends "base.html" %}
-{% block title %}Personal Finance and Expense Tracker {% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpendSense Landing Page</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-{% block content %}
+    body {
+      font-family: Arial, sans-serif;
+      color: #1e293b;
+      background-color: #ffffff;
+      line-height: 1.6;
+    }
 
-  <div class="welcome">
-    <br>
-    <br>
-    <img src="{{ url_for('static', filename='SpendSense2.png') }}" width="500px" height="200px">
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-  <p>Welcome to SpendSense, your personal finance and expense tracking application!</p>
-  <p>Track your expenses and manage your finances effectively.</p>
-  <p>
-    <div class="login">
-    <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
-    <br>
-    <a href="{{ url_for('register') }}" class="btn btn-secondary">Create an Account</a>
-  </p>
-</div>
-  </div>
-{% endblock %}
+    /* Header */
+    header {
+      width: 100%;
+      border-bottom: 1px solid #dbeafe;
+      background: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 0;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #2563eb;
+    }
+
+    .nav-buttons a {
+      text-decoration: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-left: 10px;
+      display: inline-block;
+      transition: 0.2s ease;
+    }
+
+    .login-btn {
+      border: 1px solid #2563eb;
+      color: #2563eb;
+      background: #ffffff;
+    }
+
+    .login-btn:hover {
+      background: #eff6ff;
+    }
+
+    .signup-btn {
+      background: #2563eb;
+      color: white;
+      border: 1px solid #2563eb;
+    }
+
+    .signup-btn:hover {
+      background: #1d4ed8;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(to right, #eff6ff, #ecfdf5);
+      padding: 80px 0 60px;
+    }
+
+    .hero-content {
+      max-width: 760px;
+    }
+
+    .hero h1 {
+      font-size: 52px;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      color: #0f172a;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: #475569;
+      max-width: 650px;
+    }
+
+    /* Features */
+    .features {
+      padding: 70px 0;
+    }
+
+    .feature-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: center;
+      margin-bottom: 80px;
+    }
+
+    .feature-row.reverse .feature-image {
+      order: 2;
+    }
+
+    .feature-row.reverse .feature-text {
+      order: 1;
+    }
+
+    .feature-image {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    .mockup-box {
+      background: white;
+      border: 1px solid #dbeafe;
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .mockup-top {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.blue { background: #60a5fa; }
+    .dot.green { background: #86efac; }
+    .dot.gray { background: #cbd5e1; }
+
+    .mini-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .mini-title {
+      height: 14px;
+      width: 130px;
+      background: #dbeafe;
+      border-radius: 8px;
+    }
+
+    .mini-badge {
+      height: 24px;
+      width: 80px;
+      background: #dcfce7;
+      border-radius: 20px;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      height: 110px;
+      border-radius: 14px;
+    }
+
+    .blue-card {
+      background: #dbeafe;
+    }
+
+    .green-card {
+      background: #dcfce7;
+    }
+
+    .gray-section {
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .gray-bar {
+      height: 12px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      margin-bottom: 10px;
+    }
+
+    .gray-bar.small {
+      width: 70%;
+    }
+
+    .small-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .small-box {
+      height: 50px;
+      border-radius: 10px;
+    }
+
+    .small-box.blue {
+      background: #bfdbfe;
+    }
+
+    .small-box.green {
+      background: #bbf7d0;
+    }
+
+    .small-box.gray {
+      background: #e2e8f0;
+    }
+
+    .feature-text h2 {
+      font-size: 34px;
+      margin-bottom: 16px;
+      color: #0f172a;
+    }
+
+    .feature-text p {
+      font-size: 17px;
+      color: #475569;
+      margin-bottom: 18px;
+      max-width: 500px;
+    }
+
+    .feature-text ul {
+      list-style: none;
+    }
+
+    .feature-text ul li {
+      margin-bottom: 10px;
+      color: #334155;
+      font-size: 16px;
+    }
+
+    .feature-text ul li::before {
+      content: "✔ ";
+      color: #2563eb;
+      font-weight: bold;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero h1 {
+        font-size: 38px;
+      }
+
+      .feature-row {
+        grid-template-columns: 1fr;
+      }
+
+      .feature-row.reverse .feature-image,
+      .feature-row.reverse .feature-text {
+        order: unset;
+      }
+
+      .navbar {
+        flex-direction: column;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container navbar">
+      <div class="logo">SpendSense</div>
+
+      <div class="nav-buttons">
+        <a href="/login" class="login-btn">Login</a>
+        <a href="/register" class="signup-btn">Create Account</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-content">
+      <h1>Smart budgeting and expense tracking made simple</h1>
+      <p>
+        SpendSense helps users track spending, manage income, build monthly budgets,
+        and understand financial habits through a clean and modern dashboard.
+      </p>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="container">
+
+      <!-- Row 1 -->
+      <div class="feature-row">
+        <div class="feature-image">
+          <div class="mockup-box">
+            <div class="mockup-top">
+              <span class="dot blue"></span>
+              <span class="dot green"></span>
+              <span class="dot gray"></span>
+            </div>
+
+            <div class="mini-header">
+              <div class="mini-title"></div>
+              <div class="mini-badge"></div>
+            </div>
+
+            <div class="card-grid">
+              <div class="card blue-card"></div>
+              <div class="card green-card"></div>
+            </div>
+
+            <div class="gray-section">
+              <div class="gray-bar"></div>
+              <div class="gray-bar small"></div>
+              <div class="small-grid">
+                <div class="small-box blue"></div>
+                <div class="small-box green"></div>
+                <div class="small-box gray"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-text">
+          <h2>Track Every Transaction</h2>
+          <p>
+            Users can add income and expenses in one place, making it easier to stay
+            organized and clearly see where their money is going each month.
+          </p>
+          <ul>
+            <li>Simple transaction entry</li>
+            <li>Income and expense tracking</li>
+            <li>Clean monthly overview</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="feature-row reverse">
+        <div class="feature-image">
+          <div class="mockup-box">
+            <div class="mockup-top">
+              <span class="dot blue"></span>
+              <span class="dot green"></span>
+              <span class="dot gray"></span>
+            </div>
+
+            <div class="mini-header">
+              <div class="mini-title" style="background:#dcfce7;"></div>
+              <div class="mini-badge" style="background:#dbeafe;"></div>
+            </div>
+
+            <div class="card-grid">
+              <div class="card green-card"></div>
+              <div class="card blue-card"></div>
+            </div>
+
+            <div class="gray-section">
+              <div class="gray-bar"></div>
+              <div class="gray-bar small" style="width: 60%;"></div>
+              <div class="small-grid">
+                <div class="small-box green"></div>
+                <div class="small-box blue"></div>
+                <div class="small-box gray"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-text">
+          <h2>Build Better Budgets</h2>
+          <p>
+            SpendSense lets users create budget categories and compare planned
+            spending to actual spending so they can stay within their monthly limits.
+          </p>
+          <ul>
+            <li>Budget categories</li>
+            <li>Planned vs actual comparison</li>
+            <li>Easy-to-read progress sections</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="feature-row">
+        <div class="feature-image">
+          <div class="mockup-box">
+            <div class="mockup-top">
+              <span class="dot blue"></span>
+              <span class="dot green"></span>
+              <span class="dot gray"></span>
+            </div>
+
+            <div class="mini-header">
+              <div class="mini-title"></div>
+              <div class="mini-badge"></div>
+            </div>
+
+            <div class="card-grid">
+              <div class="card blue-card"></div>
+              <div class="card green-card"></div>
+            </div>
+
+            <div class="gray-section">
+              <div class="gray-bar"></div>
+              <div class="gray-bar small" style="width: 75%;"></div>
+              <div class="small-grid">
+                <div class="small-box blue"></div>
+                <div class="small-box gray"></div>
+                <div class="small-box green"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-text">
+          <h2>Understand Spending Trends</h2>
+          <p>
+            Visual summaries help users quickly understand their spending behavior,
+            spot patterns, and make smarter decisions based on their financial data.
+          </p>
+          <ul>
+            <li>Monthly spending insights</li>
+            <li>Visual summaries</li>
+            <li>Better financial awareness</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</body>
+</html>
