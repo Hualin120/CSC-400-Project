@@ -11,6 +11,22 @@
         <a href="{{ url_for('transactions', filter='expense') }}">Expense</a>
     </div>
     
+    <div class="account-book-switcher">
+        <label>Current：</label>
+        <select onchange="location.href=this.value;">
+            {% for book in account_books %}
+                <option value="{{ url_for('switch_account_book', book_id=book.id) }}"
+                        {% if current_book and current_book.id == book.id %}selected{% endif %}>
+                    {{ book.bookname }}
+                </option>
+            {% endfor %}
+        </select>
+        <a href="{{ url_for('create_account_book') }}" class="btn btn-sm">+ Create a new account book</a>
+    </div>
+
+    <a href="{{ url_for('transactions', view='all') }}">Check all account book</a>
+
+
     <!-- Add Transaction Form -->
     <h3>Add New Transaction</h3>
     <form method="POST" action="{{ url_for('add_transaction') }}">
@@ -41,6 +57,10 @@
     <table border="1">
         <thead>
             <tr>
+                {% if view_type == 'all' %}
+                <th>Account Book</th>
+                {% endif %}
+                
                 <th>Date</th>
                 <th>Type</th>
                 <th>Category</th>
@@ -54,11 +74,16 @@
         <tbody>
             {% for t in transactions %}
             <tr>
+                {% if view_type == 'all' %}
+                <td>{{ t.account_book.bookname }}</td>
+                {% endif %}
+
                 <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
                 <td>{{ t.type }}</td>
                 <td>{{ t.category }}</td>
                 <td>{{ t.description }}</td>
                 <td>{{ t.amount }}</td>
+
                 <td>
                     <form method="POST" action="{{ url_for('delete_transaction', id=t.id) }}">
                         <button type="submit">Delete</button>
