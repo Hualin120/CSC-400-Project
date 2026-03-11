@@ -11,7 +11,7 @@ from forms import (
     ResetPasswordForm, TransactionForm
 )
 
-from models import db, User, Transaction, EmailToken, sha256, AccountBook
+from models import db, User, EmailToken, sha256, AccountBook, Income, Expense
 from email_utils import send_email
 from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
 from auth_routes import auth_bp
@@ -292,54 +292,21 @@ def transactions():
         flash('Please create an account book', 'info')
         return redirect(url_for('create_account_book'))
     
-    # Get view type and account book id
-    view_type = request.args.get('view', 'current')  # 'current', 'all', 'specific'
-    book_id = request.args.get('book_id', None)
-    
     # Get current account book
     current_book_id = session.get('current_account_book')
     if not current_book_id or current_book_id not in [b.id for b in account_books]:
         current_book_id = account_books[0].id
         session['current_account_book'] = current_book_id
     
-    # Query transactions based on view type
-    if view_type == 'all':
-
-        # 1. All account book
-        transactions = Transaction.query.join(AccountBook).filter(
-            AccountBook.user_id == current_user.id
-        ).order_by(Transaction.date.desc()).all()
-        current_book = None
-        
-    elif view_type == 'specific' and book_id:
-
-        # 2. Specific account book
-        current_book_id = int(book_id)
-        session['current_account_book'] = current_book_id
-        transactions = Transaction.query.filter_by(
-            account_book_id=current_book_id
-        ).order_by(Transaction.date.desc()).all()
-        current_book = AccountBook.query.get(current_book_id)
-        
-    else:
-        # 3. Current account book(default)
-        transactions = Transaction.query.filter_by(
-            account_book_id=current_book_id
-        ).order_by(Transaction.date.desc()).all()
-        current_book = AccountBook.query.get(current_book_id)
+    current_book = AccountBook.query.get(current_book_id)
     
-    # Allow user to filter income and expenses
-    filter_type = request.args.get('filter', 'all')
-    if filter_type == 'income':
-        transactions = [t for t in transactions if t.type == 'income']
 
-    elif filter_type == 'expense':
-        transactions = [t for t in transactions if t.type == 'expense']
+    incomes = Income.query.filter_by(account_book_id=current_book_id).order_by(Income.date.desc()).all()
+    expenses = Expense.query.filter_by(account_book_id=current_book_id).order_by(Expense.date.desc()).all()
     
     form = TransactionForm()
     
-    return render_template('transactions.html', transactions=transactions, account_books=account_books, current_book=current_book, view_type=view_type, filter_type=filter_type, form=form)
-
+    return render_template('transactions.html', incomes=incomes, expenses=expenses,account_books=account_books, current_book=current_book, form=form)
 
 @app.route('/add_transaction', methods=['POST'])
 @login_required
@@ -363,17 +330,27 @@ def add_transaction():
     
     if form.validate_on_submit():
         try:
-            transaction = Transaction(
-                type=form.type.data,
-                description=form.description.data,
-                category=form.category.data,
-                amount=form.amount.data,
-                account_book_id=current_book_id
-            )
+            # The type field determines whether to create an Income or Expense.
+            if form.type.data == 'income':
+                transaction = Income(
+                    description=form.description.data,
+                    category=form.category.data,
+                    amount=form.amount.data,
+                    account_book_id=current_book_id
+                )
+            else:  # expense
+                transaction = Expense(
+                    description=form.description.data,
+                    category=form.category.data,
+                    amount=form.amount.data,
+                    account_book_id=current_book_id
+                )
+            
             db.session.add(transaction)
             db.session.commit()
             flash('Transaction added successfully!', 'success')
         except Exception as e:
+
             db.session.rollback()
             flash(f'Error adding transaction: {str(e)}', 'danger')
     else:
@@ -385,12 +362,21 @@ def add_transaction():
     return redirect(url_for('transactions'))
 
 
-@app.route('/delete_transaction/<int:id>', methods=['POST'])
+@app.route('/delete_transaction/<string:type>/<int:id>', methods=['POST'])
 @login_required
-def delete_transaction(id):
+def delete_transaction(type, id):
     try:
-        # Verify whether a transaction belongs to the current user's account book via JOIN.
-        transaction = Transaction.query.join(AccountBook).filter(Transaction.id == id, AccountBook.user_id == current_user.id).first_or_404()
+        # Select the table to delete based on its type.
+        if type == 'income':
+            transaction = Income.query.join(AccountBook).filter(
+                Income.id == id, 
+                AccountBook.user_id == current_user.id
+            ).first_or_404()
+        else:  # expense
+            transaction = Expense.query.join(AccountBook).filter(
+                Expense.id == id, 
+                AccountBook.user_id == current_user.id
+            ).first_or_404()
         
         db.session.delete(transaction)
         db.session.commit()
