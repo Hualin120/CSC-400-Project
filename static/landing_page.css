@@ -1,0 +1,279 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    line-height: 1.6;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Header */
+header {
+    width: 100%;
+    border-bottom: 1px solid #dbeafe;
+    background: #ffffff;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2563eb;
+}
+
+.nav-buttons a {
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-left: 10px;
+    display: inline-block;
+    transition: 0.2s ease;
+}
+
+.login-btn {
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    background: #ffffff;
+}
+
+.login-btn:hover {
+    background: #eff6ff;
+}
+
+.signup-btn {
+    background: #2563eb;
+    color: white;
+    border: 1px solid #2563eb;
+}
+
+.signup-btn:hover {
+    background: #1d4ed8;
+}
+
+/* Hero */
+.hero {
+    background: linear-gradient(to right, #eff6ff, #ecfdf5);
+    padding: 80px 0 60px;
+}
+
+.hero-content {
+    max-width: 760px;
+}
+
+.hero h1 {
+    font-size: 52px;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    color: #0f172a;
+}
+
+.hero p {
+    font-size: 18px;
+    color: #475569;
+    max-width: 650px;
+}
+
+/* Features */
+.features {
+    padding: 70px 0;
+}
+
+.feature-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: center;
+    margin-bottom: 80px;
+}
+
+.feature-row.reverse .feature-image {
+    order: 2;
+}
+
+.feature-row.reverse .feature-text {
+    order: 1;
+}
+
+.feature-image {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.mockup-box {
+    background: white;
+    border: 1px solid #dbeafe;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.mockup-top {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.blue { background: #60a5fa; }
+.dot.green { background: #86efac; }
+.dot.gray { background: #cbd5e1; }
+
+.mini-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.mini-title {
+    height: 14px;
+    width: 130px;
+    background: #dbeafe;
+    border-radius: 8px;
+}
+
+.mini-badge {
+    height: 24px;
+    width: 80px;
+    background: #dcfce7;
+    border-radius: 20px;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.card {
+    height: 110px;
+    border-radius: 14px;
+}
+
+.blue-card {
+    background: #dbeafe;
+}
+
+.green-card {
+    background: #dcfce7;
+}
+
+.gray-section {
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.gray-bar {
+    height: 12px;
+    border-radius: 8px;
+    background: #e2e8f0;
+    margin-bottom: 10px;
+}
+
+.gray-bar.small {
+    width: 70%;
+}
+
+.small-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.small-box {
+    height: 50px;
+    border-radius: 10px;
+}
+
+.small-box.blue {
+    background: #bfdbfe;
+}
+
+.small-box.green {
+    background: #bbf7d0;
+}
+
+.small-box.gray {
+    background: #e2e8f0;
+}
+
+.feature-text h2 {
+    font-size: 34px;
+    margin-bottom: 16px;
+    color: #0f172a;
+}
+
+.feature-text p {
+    font-size: 17px;
+    color: #475569;
+    margin-bottom: 18px;
+    max-width: 500px;
+}
+
+.feature-text ul {
+    list-style: none;
+}
+
+.feature-text ul li {
+    margin-bottom: 10px;
+    color: #334155;
+    font-size: 16px;
+}
+
+.feature-text ul li::before {
+    content: "✔ ";
+    color: #2563eb;
+    font-weight: bold;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .hero h1 {
+    font-size: 38px;
+    }
+
+    .feature-row {
+    grid-template-columns: 1fr;
+    }
+
+    .feature-row.reverse .feature-image,
+    .feature-row.reverse .feature-text {
+    order: unset;
+    }
+
+    .navbar {
+    flex-direction: column;
+    gap: 15px;
+}
+}

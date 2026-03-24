@@ -11,7 +11,7 @@ from forms import (
     ResetPasswordForm, TransactionForm
 )
 
-from models import db, User, Transaction, EmailToken, sha256
+from models import db, User, EmailToken, sha256, AccountBook, Income, Expense
 from email_utils import send_email
 from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
 from auth_routes import auth_bp
@@ -82,8 +82,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash("You have been logged out.", "info")
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 # -------------------
 # REGISTER (send OTP)
@@ -271,65 +270,218 @@ def reset_password(raw_token):
 # -------------------
 # DASHBOARD
 # -------------------
-@app.route('/dashboard')
+@app.route("/dashboard")
 @login_required
 def dashboard():
-    if not getattr(current_user, "is_email_verified", False):
-        return redirect(url_for("verify_email"))
-    return render_template('dashboard.html')
+    account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
 
+    account_book_ids = [book.id for book in account_books]
+
+    all_incomes = []
+    all_expenses = []
+
+    if account_book_ids:
+        all_incomes = (
+            Income.query
+            .filter(Income.account_book_id.in_(account_book_ids))
+            .order_by(Income.date.desc())
+            .all()
+        )
+
+        all_expenses = (
+            Expense.query
+            .filter(Expense.account_book_id.in_(account_book_ids))
+            .order_by(Expense.date.desc())
+            .all()
+        )
+
+    total_income = sum(income.amount for income in all_incomes)
+    total_expense = sum(expense.amount for expense in all_expenses)
+    net_balance = total_income - total_expense
+    number_of_account_books = len(account_books)
+
+    # Last three transactions for each table
+    recent_income = all_incomes[:3]
+    recent_expenses = all_expenses[:3]
+
+    account_books_overview = []
+    for book in account_books:
+        book_total_income = sum(income.amount for income in book.incomes)
+        book_total_expense = sum(expense.amount for expense in book.expenses)
+        book_balance = book_total_income - book_total_expense
+
+        account_books_overview.append({
+            "id": book.id,
+            "bookname": book.bookname,
+            "total_income": book_total_income,
+            "total_expense": book_total_expense,
+            "balance": book_balance
+        })
+
+    return render_template(
+        "dashboard.html",
+        total_income=total_income,
+        total_expense=total_expense,
+        net_balance=net_balance,
+        number_of_account_books=number_of_account_books,
+        recent_income=recent_income,
+        recent_expenses=recent_expenses,
+        account_books_overview=account_books_overview
+    )
 # -------------------
 # TRANSACTIONS
 # -------------------
 @app.route("/transactions", methods=['GET'])
 @login_required
 def transactions():
-    filter_type = request.args.get('filter', 'all')
+    # Get users account book, so user can switch to another account book
+    account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
+    
+    # If there's no account book, redirect to create page
+    if not account_books:
+        flash('Please create an account book', 'info')
+        return redirect(url_for('create_account_book'))
+    
+    # Get current account book
+    current_book_id = session.get('current_account_book')
+    if not current_book_id or current_book_id not in [b.id for b in account_books]:
+        current_book_id = account_books[0].id
+        session['current_account_book'] = current_book_id
+    
+    current_book = AccountBook.query.get(current_book_id)
+    
 
-    query = Transaction.query.filter_by(user_id=current_user.id)
-
-    if filter_type == 'income':
-        query = query.filter_by(type='income')
-    elif filter_type == 'expense':
-        query = query.filter_by(type='expense')
-
-    transactions = query.order_by(Transaction.date.desc()).all()
+    incomes = Income.query.filter_by(account_book_id=current_book_id).order_by(Income.date.desc()).all()
+    expenses = Expense.query.filter_by(account_book_id=current_book_id).order_by(Expense.date.desc()).all()
+    
     form = TransactionForm()
-
-    return render_template('transactions.html', transactions=transactions, current_filter=filter_type, form=form)
-
+    
+    return render_template('transactions.html', incomes=incomes, expenses=expenses,account_books=account_books, current_book=current_book, form=form)
 
 @app.route('/add_transaction', methods=['POST'])
 @login_required
 def add_transaction():
     form = TransactionForm()
-
+    
+    # Get current account book id
+    current_book_id = session.get('current_account_book')
+    
+    # To verify if the current account boox exist or not
+    if not current_book_id:
+        flash('Please select an account book first.', 'danger')
+        return redirect(url_for('transactions'))
+    
+    # Verify if the current current account belongs to this user 
+    current_book = AccountBook.query.filter_by(id=current_book_id, user_id=current_user.id).first()
+    
+    if not current_book:
+        flash('Invalid account book selected.', 'danger')
+        return redirect(url_for('transactions'))
+    
     if form.validate_on_submit():
-        transaction = Transaction(
-            type=form.type.data,
-            description=form.description.data,
-            category=form.category.data,
-            amount=form.amount.data,
-            user_id=current_user.id
-        )
-        db.session.add(transaction)
-        db.session.commit()
-        flash('Transaction added successfully!', 'success')
+        try:
+            # The type field determines whether to create an Income or Expense.
+            if form.type.data == 'income':
+                transaction = Income(
+                    description=form.description.data,
+                    category=form.category.data,
+                    amount=form.amount.data,
+                    account_book_id=current_book_id
+                )
+            else:  # expense
+                transaction = Expense(
+                    description=form.description.data,
+                    category=form.category.data,
+                    amount=form.amount.data,
+                    account_book_id=current_book_id
+                )
+            
+            db.session.add(transaction)
+            db.session.commit()
+            flash('Transaction added successfully!', 'success')
+        except Exception as e:
+
+            db.session.rollback()
+            flash(f'Error adding transaction: {str(e)}', 'danger')
     else:
+
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f'{getattr(form, field).label.text}: {error}', 'danger')
-
+    
     return redirect(url_for('transactions'))
 
 
-@app.route('/delete_transaction/<int:id>', methods=['POST'])
+@app.route('/delete_transaction/<string:type>/<int:id>', methods=['POST'])
 @login_required
-def delete_transaction(id):
-    transaction = Transaction.query.filter_by(id=id, user_id=current_user.id).first_or_404()
-    db.session.delete(transaction)
-    db.session.commit()
-    flash('Transaction deleted.', 'success')
+def delete_transaction(type, id):
+    try:
+        # Select the table to delete based on its type.
+        if type == 'income':
+            transaction = Income.query.join(AccountBook).filter(
+                Income.id == id, 
+                AccountBook.user_id == current_user.id
+            ).first_or_404()
+        else:  # expense
+            transaction = Expense.query.join(AccountBook).filter(
+                Expense.id == id, 
+                AccountBook.user_id == current_user.id
+            ).first_or_404()
+        
+        db.session.delete(transaction)
+        db.session.commit()
+        flash('Transaction deleted successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting transaction: {str(e)}', 'danger')
+    
+    return redirect(url_for('transactions'))
+
+
+@app.route('/create_account_book', methods=['GET', 'POST'])
+@login_required
+def create_account_book():
+
+    if request.method == 'GET':
+        return render_template('create_account_book.html')
+    
+    if request.method == 'POST':
+        book_name = request.form.get('book_name', '').strip()
+        
+        # To check whether the account name is empty or not
+        if not book_name:
+            flash('Account book name cannot be empty', 'danger')
+            return redirect(url_for('create_account_book'))
+        
+        # Create new account book
+        new_book = AccountBook(
+            bookname=book_name,
+            user_id=current_user.id
+        )
+        
+        try:
+            db.session.add(new_book)
+            db.session.commit()
+            
+            # Set the newly account book as current account book
+            session['current_account_book'] = new_book.id
+            
+            flash(f'Account book "{book_name}" created successfully!', 'success')
+            return redirect(url_for('transactions'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while creating account book. Please try again.', 'danger')
+            return redirect(url_for('create_account_book'))
+
+
+@app.route('/switch_account_book/<int:book_id>')
+@login_required
+def switch_account_book(book_id):
+    # To check and verify the account book is belong current user
+    book = AccountBook.query.filter_by(id=book_id, user_id=current_user.id).first_or_404()
+    session['current_account_book'] = book_id
     return redirect(url_for('transactions'))
 
 

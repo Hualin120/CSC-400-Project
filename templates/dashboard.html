@@ -1,14 +1,173 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-  <h1>Dashboard</h1>
-  <div class="user">
-    <p>Welcome, {{ current_user.username }}!</p>
-    <p> Status: Financially Stable!</p>
-  </div>
-  <div class="dashmessage">
-    <p>This is your personal dashboard where you can manage your finances and track your expenses.</p>
+
+<div class="mb-4">
+    <h1 class="fw-bold">Dashboard</h1>
+    <p class="text-muted mb-0">
+        Welcome, {{ current_user.username }}.
+    </p>
+</div>
+
+<!-- Top Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="app-card h-100">
+            <p class="text-muted mb-2">Total Income</p>
+            <h3 class="mb-0 text-success">${{ "%.2f"|format(total_income) }}</h3>
+        </div>
     </div>
-    
+
+    <div class="col-md-6 col-xl-3">
+        <div class="app-card h-100">
+            <p class="text-muted mb-2">Total Expenses</p>
+            <h3 class="mb-0 text-danger">${{ "%.2f"|format(total_expense) }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="app-card h-100">
+            <p class="text-muted mb-2">Net Balance</p>
+            <h3 class="mb-0 {% if net_balance > 0 %}text-success{% elif net_balance < 0 %}text-danger{% else %}text-primary{% endif %}">
+                {% if net_balance > 0 %}
+                    +${{ "%.2f"|format(net_balance) }}
+                {% elif net_balance < 0 %}
+                    -${{ "%.2f"|format(net_balance|abs) }}
+                {% else %}
+                    $0.00
+                {% endif %}
+            </h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="app-card h-100">
+            <p class="text-muted mb-2">Account Books</p>
+            <h3 class="mb-0 text-primary">{{ number_of_account_books }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Middle Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="app-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Recent Income Across All Books</h4>
+            </div>
+
+            {% if recent_income %}
+                <ul class="list-group list-group-flush">
+                    {% for income in recent_income %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ income.category }}</strong><br>
+                                <small class="text-muted">{{ income.description }}</small><br>
+                                <small class="text-muted">{{ income.date.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                            <span class="text-success fw-semibold">
+                                ${{ "%.2f"|format(income.amount) }}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted mb-0">No income transactions yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="app-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Recent Expenses Across All Books</h4>
+            </div>
+
+            {% if recent_expenses %}
+                <ul class="list-group list-group-flush">
+                    {% for expense in recent_expenses %}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ expense.category }}</strong><br>
+                                <small class="text-muted">{{ expense.description }}</small><br>
+                                <small class="text-muted">{{ expense.date.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                            <span class="text-danger fw-semibold">
+                                ${{ "%.2f"|format(expense.amount) }}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted mb-0">No expense transactions yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Row -->
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="app-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Account Books Overview</h4>
+                <span class="green-badge">Summary</span>
+            </div>
+
+            {% if account_books_overview %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Income</th>
+                                <th>Expenses</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for book in account_books_overview %}
+                                <tr>
+                                    <td>{{ book.bookname }}</td>
+                                    <td class="text-success">${{ "%.2f"|format(book.total_income) }}</td>
+                                    <td class="text-danger">${{ "%.2f"|format(book.total_expense) }}</td>
+                                    <td class="{% if book.balance > 0 %}text-success{% elif book.balance < 0 %}text-danger{% else %}text-primary{% endif %}">
+                                        {% if book.balance > 0 %}
+                                            +${{ "%.2f"|format(book.balance) }}
+                                        {% elif book.balance < 0 %}
+                                            -${{ "%.2f"|format(book.balance|abs) }}
+                                        {% else %}
+                                            $0.00
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No account books yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="app-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Spending Overview</h4>
+                <span class="green-badge">Chart Placeholder</span>
+            </div>
+
+            <div class="dashboard-chart-placeholder">
+                <div>
+                    <p class="mb-2 fw-semibold">Chart.js placeholder</p>
+                    <p class="text-muted mb-0">
+                        This section can later show monthly spending trends, category breakdowns, or income vs expenses.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

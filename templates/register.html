@@ -1,47 +1,51 @@
-{% extends "base.html" %}
-{% block title %}Create Your Account{% endblock %}
+{% extends "auth_base.html" %}
 
-{% block content %}
-<div class="register">
-  <h2>Create an Account!</h2>
+{% block title %}Register | SpendSense{% endblock %}
 
-  <form method="POST">
-    {{ form.hidden_tag() }}
+{% block auth_content %}
+    <h1 class="auth-logo">SpendSense</h1>
+    <p class="auth-subtitle">Create your account</p>
 
-    <p>
-      Create your username:<br>
-      {{ form.username() }}
-    </p>
-    {% for error in form.username.errors %}
-      <span style="color:red;">{{ error }}</span>
-    {% endfor %}
+    <form method="POST">
+        {{ form.hidden_tag() }}
 
-    <p>
-      Enter your email:<br>
-      {{ form.email() }}
-    </p>
-    {% for error in form.email.errors %}
-      <span style="color:red;">{{ error }}</span>
-    {% endfor %}
+        <div class="form-group">
+            {{ form.username.label }}
+            {{ form.username(class="form-control", placeholder="Choose a username") }}
+            {% for error in form.username.errors %}
+                <div class="field-error">{{ error }}</div>
+            {% endfor %}
+        </div>
 
-    <p>
-      Create a UNIQUE password:<br>
-      {{ form.password() }}
-    </p>
+        <div class="form-group">
+            {{ form.email.label }}
+            {{ form.email(class="form-control", placeholder="Enter your email") }}
+            {% for error in form.email.errors %}
+                <div class="field-error">{{ error }}</div>
+            {% endfor %}
+        </div>
 
-    <p>
-      Verify password:<br>
-      {{ form.confirm_password() }}
-    </p>
-    {% for error in form.confirm_password.errors %}
-      <span style="color:red;">{{ error }}</span>
-    {% endfor %}
+        <div class="form-group">
+            {{ form.password.label }}
+            {{ form.password(class="form-control", placeholder="Create a password") }}
+            {% for error in form.password.errors %}
+                <div class="field-error">{{ error }}</div>
+            {% endfor %}
+        </div>
 
-    <button type="submit">Register</button>
-  </form>
+        <div class="form-group">
+            {{ form.confirm_password.label }}
+            {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
+            {% for error in form.confirm_password.errors %}
+                <div class="field-error">{{ error }}</div>
+            {% endfor %}
+        </div>
 
-  <div class="link-row">
-    <a href="{{ url_for('login') }}">Already have an account? Login</a>
-  </div>
-</div>
+        {{ form.submit(class="btn-primary") }}
+
+        <div class="auth-links">
+            <span>Already have an account?</span>
+            <a href="{{ url_for('login') }}">Login</a>
+        </div>
+    </form>
 {% endblock %}
