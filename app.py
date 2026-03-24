@@ -82,8 +82,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash("You have been logged out.", "info")
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 # -------------------
 # REGISTER (send OTP)
@@ -271,13 +270,64 @@ def reset_password(raw_token):
 # -------------------
 # DASHBOARD
 # -------------------
-@app.route('/dashboard')
+@app.route("/dashboard")
 @login_required
 def dashboard():
-    if not getattr(current_user, "is_email_verified", False):
-        return redirect(url_for("verify_email"))
-    return render_template('dashboard.html')
+    account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
 
+    account_book_ids = [book.id for book in account_books]
+
+    all_incomes = []
+    all_expenses = []
+
+    if account_book_ids:
+        all_incomes = (
+            Income.query
+            .filter(Income.account_book_id.in_(account_book_ids))
+            .order_by(Income.date.desc())
+            .all()
+        )
+
+        all_expenses = (
+            Expense.query
+            .filter(Expense.account_book_id.in_(account_book_ids))
+            .order_by(Expense.date.desc())
+            .all()
+        )
+
+    total_income = sum(income.amount for income in all_incomes)
+    total_expense = sum(expense.amount for expense in all_expenses)
+    net_balance = total_income - total_expense
+    number_of_account_books = len(account_books)
+
+    # Last three transactions for each table
+    recent_income = all_incomes[:3]
+    recent_expenses = all_expenses[:3]
+
+    account_books_overview = []
+    for book in account_books:
+        book_total_income = sum(income.amount for income in book.incomes)
+        book_total_expense = sum(expense.amount for expense in book.expenses)
+        book_balance = book_total_income - book_total_expense
+
+        account_books_overview.append({
+            "id": book.id,
+            "bookname": book.bookname,
+            "total_income": book_total_income,
+            "total_expense": book_total_expense,
+            "balance": book_balance
+        })
+
+    return render_template(
+        "dashboard.html",
+        total_income=total_income,
+        total_expense=total_expense,
+        net_balance=net_balance,
+        number_of_account_books=number_of_account_books,
+        recent_income=recent_income,
+        recent_expenses=recent_expenses,
+        account_books_overview=account_books_overview
+    )
 # -------------------
 # TRANSACTIONS
 # -------------------
@@ -417,7 +467,7 @@ def create_account_book():
             # Set the newly account book as current account book
             session['current_account_book'] = new_book.id
             
-            flash(f'Account book "{book_name}" Create success!', 'success')
+            flash(f'Account book "{book_name}" created successfully!', 'success')
             return redirect(url_for('transactions'))
             
         except Exception as e:
