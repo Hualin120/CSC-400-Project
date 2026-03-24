@@ -2,15 +2,22 @@
 
 {% block content %}
 <div class="container">
-    <h1>Transactions</h1>
+    <h1>Transactions - {{ current_book.bookname }}</h1>
     
-    <!-- Filter Buttons -->
+    <!-- Account Book Switcher -->
     <div>
-        <a href="{{ url_for('transactions', filter='all') }}">All</a>
-        <a href="{{ url_for('transactions', filter='income') }}">Income</a>
-        <a href="{{ url_for('transactions', filter='expense') }}">Expense</a>
+        <label>Current：</label>
+        <select onchange="location.href=this.value;">
+            {% for book in account_books %}
+                <option value="{{ url_for('switch_account_book', book_id=book.id) }}"
+                        {% if current_book.id == book.id %}selected{% endif %}>
+                    {{ book.bookname }}
+                </option>
+            {% endfor %}
+        </select>
+        <a href="{{ url_for('create_account_book') }}">+ Create a new account book</a>
     </div>
-    
+
     <!-- Add Transaction Form -->
     <h3>Add New Transaction</h3>
     <form method="POST" action="{{ url_for('add_transaction') }}">
@@ -31,49 +38,97 @@
         <div>
             {{ form.submit() }}
         </div>
-        
     </form>
     
-    <!-- Transactions List -->
-    <h3>Transaction History</h3>
-    
-    {% if transactions %}
+    <!-- Income Table -->
+    <h3>Income</h3>
+    {% if incomes %}
     <table border="1">
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Type</th>
                 <th>Category</th>
                 <th>Description</th>
                 <th>Amount</th>
                 <th>Action</th>
             </tr>
-
         </thead>
-
         <tbody>
-            {% for t in transactions %}
+            {% for t in incomes %}
             <tr>
                 <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
-                <td>{{ t.type }}</td>
                 <td>{{ t.category }}</td>
                 <td>{{ t.description }}</td>
-                <td>{{ t.amount }}</td>
+                <td>${{ "%.2f"|format(t.amount) }}</td>
                 <td>
-                    <form method="POST" action="{{ url_for('delete_transaction', id=t.id) }}">
+                    <form method="POST" action="{{ url_for('delete_transaction', type='income', id=t.id) }}">
                         <button type="submit">Delete</button>
                     </form>
                 </td>
             </tr>
             {% endfor %}
-
         </tbody>
-
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total Income</strong></td>
+                <td><strong>${{ "%.2f"|format(incomes|map(attribute='amount')|sum) }}</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
     </table>
-
     {% else %}
-    <p>No transactions yet.</p>
+    <p>No income yet.</p>
     {% endif %}
+    
+    <!-- Expense Table -->
+    <h3>Expense</h3>
+    {% if expenses %}
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in expenses %}
+            <tr>
+                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ t.category }}</td>
+                <td>{{ t.description }}</td>
+                <td>${{ "%.2f"|format(t.amount) }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('delete_transaction', type='expense', id=t.id) }}">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total Expense</strong></td>
+                <td><strong>${{ "%.2f"|format(expenses|map(attribute='amount')|sum) }}</strong></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+    {% else %}
+    <p>No expenses yet.</p>
+    {% endif %}
+    
+    <!-- Summary -->
+    <h3>Summary</h3>
+    {% set total_income = incomes|map(attribute='amount')|sum %}
+    {% set total_expense = expenses|map(attribute='amount')|sum %}
+    <p>
+        Total Income: ${{ "%.2f"|format(total_income) }}<br>
+        Total Expense: ${{ "%.2f"|format(total_expense) }}<br>
+        <strong>Balance: ${{ "%.2f"|format(total_income - total_expense) }}</strong>
+    </p>
     
 </div>
 {% endblock %}

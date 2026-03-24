@@ -67,14 +67,39 @@ class EmailToken(db.Model):
     def new_link_token() -> str:
         # long random token for password reset links
         return secrets.token_urlsafe(32)
-    
-class Transaction(db.Model):
-    __tablename__ = 'transactions'
+
+
+class AccountBook(db.Model):
+    __tablename__ = 'account_books'
     id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum('income', 'expense', name='transaction_type'), nullable=False)
+    bookname = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='account_books')
+    incomes = db.relationship('Income', backref='account_book', lazy=True)
+    expenses = db.relationship('Expense', backref='account_book', lazy=True)
+
+
+class Income(db.Model):
+    __tablename__ = 'incomes'
+    
+    id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(120), nullable=False)
-    category = db.Column(db.String(50), nullable=False) 
+    category = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    account_book_id = db.Column(db.Integer, db.ForeignKey('account_books.id'), nullable=False)
+
+
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(120), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    account_book_id = db.Column(db.Integer, db.ForeignKey('account_books.id'), nullable=False)
