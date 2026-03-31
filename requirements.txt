@@ -18,6 +18,7 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 mailjet-rest==1.5.1
 MarkupSafe==3.0.3
+pandas==3.0.1
 psycopg2-binary==2.9.11
 python-dotenv==1.2.1
 requests==2.32.5

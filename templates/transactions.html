@@ -35,6 +35,23 @@
     </div>
 </div>
 
+
+
+<!-- Delete Account Book -->
+{% if account_books|length > 1 %}
+    <form method="POST" action="{{ url_for('delete_account_book', book_id=current_book.id) }}" 
+          style="display: inline;"
+          onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
+        <button type="submit" class="btn btn-danger">Delete "{{ current_book.bookname }}"</button>
+    </form>
+{% else %}
+    <button type="button" class="btn btn-outline-secondary" disabled>Cannot delete last account book</button>
+{% endif %}
+
+
+<button type="button" onclick="openModal()" class="btn btn-outline-primary">Export Multiple Books</button>
+
+
 <!-- Add Transaction Form -->
 <div class="app-card p-4 mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -212,4 +229,92 @@
         </div>
     </div>
 </div>
+
+
+
+<!-- export multiple account book modal -->
+<div id="exportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
+
+        <!-- Title bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">📚 Export Account Books</h3>
+            <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('csv.export_multiple') }}" id="exportForm">
+
+            <!-- Account book selection -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <label><strong>Select Account Books:</strong></label>
+                    <div>
+                        <button type="button" onclick="selectAll(true)" style="background: none; border: none; color: #2563eb; cursor: pointer;">Select All</button>
+                        <button type="button" onclick="selectAll(false)" style="background: none; border: none; color: #6c757d; cursor: pointer;">Deselect All</button>
+                    </div>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    {% for book in account_books %}
+                    <div style="margin-bottom: 12px;">
+                        <input type="checkbox" name="book_ids" value="{{ book.id }}" id="book_{{ book.id }}">
+                        <label for="book_{{ book.id }}" style="margin-left: 8px;">
+                            <strong>{{ book.bookname }}</strong>
+                            <span style="color: #6c757d; font-size: 12px;">
+                                ({{ book.incomes|length + book.expenses|length }} transactions)
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Export Format Selection -->
+            <div style="margin-bottom: 20px;">
+                <label><strong>Export Format:</strong></label>
+                <div style="margin-top: 10px;">
+                    <div style="margin-bottom: 10px;">
+                        <input type="radio" name="export_format" value="single" id="format_single" checked>
+                        <label for="format_single">📄 Single CSV File (all books combined)</label>
+                    </div>
+                    <div>
+                        <input type="radio" name="export_format" value="separate" id="format_separate">
+                        <label for="format_separate">🗜️ ZIP Archive (each book as separate CSV)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Button -->
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Export</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Open Modal
+function openModal() {
+    document.getElementById('exportModal').style.display = 'block';
+}
+
+// Close Modal
+function closeModal() {
+    document.getElementById('exportModal').style.display = 'none';
+}
+
+// Select All / Deselect All
+function selectAll(select) {
+    const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
+    checkboxes.forEach(cb => cb.checked = select);
+}
+
+// Click outside the modal to close.
+document.getElementById('exportModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+</script>
+
 {% endblock %}

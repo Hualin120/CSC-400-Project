@@ -15,6 +15,7 @@ from models import db, User, EmailToken, sha256, AccountBook, Income, Expense
 from email_utils import send_email
 from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
 from auth_routes import auth_bp
+from csv_routes import csv_bp
 
 load_dotenv(override=True)
 print("MAILJET_API_KEY loaded?", bool(os.getenv("MAILJET_API_KEY")))
@@ -29,6 +30,7 @@ db.init_app(app)
 
 # blue print
 app.register_blueprint(auth_bp)
+app.register_blueprint(csv_bp, url_prefix='/csv')
 
 @app.before_request
 def ensure_tables_exits():
@@ -483,6 +485,40 @@ def switch_account_book(book_id):
     book = AccountBook.query.filter_by(id=book_id, user_id=current_user.id).first_or_404()
     session['current_account_book'] = book_id
     return redirect(url_for('transactions'))
+
+
+@app.route('/delete_account_book/<int:book_id>', methods=['POST'])
+@login_required
+def delete_account_book(book_id):
+    try:
+        # verify the book is belong the current user
+        book = AccountBook.query.filter_by(id=book_id, user_id=current_user.id).first_or_404()
+        
+        # get all the books from current user
+        all_books = AccountBook.query.filter_by(user_id=current_user.id).all()
+        
+        current_book_id = session.get('current_account_book')
+        need_switch = (current_book_id == book_id)
+        
+        db.session.delete(book)
+        db.session.commit()
+        
+        flash(f'Account book "{book.bookname}" has been deleted.', 'success')
+        
+        # If the book is current book, switch
+        if need_switch and len(all_books) > 1:
+            # find another book as current book
+            remaining_books = [b for b in all_books if b.id != book_id]
+            if remaining_books:
+                session['current_account_book'] = remaining_books[0].id
+        
+        return redirect(url_for('transactions'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting account book: {str(e)}', 'danger')
+        return redirect(url_for('transactions'))
+
 
 
 @app.route("/budgets")
