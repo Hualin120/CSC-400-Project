@@ -33,28 +33,30 @@
             </a>
         </div>
 
-        <div class="row g-3 align-items-end">
-            <div class="col-lg-6">
-        <!-- Delete Account Book -->
-                {% if account_books|length > 1 %}
-                    <form method="POST" action="{{ url_for('delete_account_book', book_id=current_book.id) }}" 
-                        style="display: inline;"
-                        onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
-                        <button type="submit" class="btn btn-danger">Delete "{{ current_book.bookname }}"</button>
-                    </form>
-                {% else %}
-                    <button type="button" class="btn btn-outline-primary" disabled>Cannot delete last account book</button>
-                {% endif %}
+        <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+            {% if account_books|length > 1 %}
+                <form method="POST"
+                      action="{{ url_for('delete_account_book', book_id=current_book.id) }}"
+                      onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
+                    <button type="submit" class="btn btn-danger">
+                        Delete {{ current_book.bookname }}
+                    </button>
+                </form>
+            {% else %}
+                <button type="button" class="btn btn-outline-primary" disabled>
+                    Cannot delete last account book
+                </button>
+            {% endif %}
 
-
-                <button type="button" onclick="openModal()" class="btn btn-outline-primary">Export Multiple Books</button>
-            </div>
+            <button type="button" onclick="openModal()" class="btn btn-outline-primary">
+                Export Multiple Books
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Summary -->
-<div class="row g-4">
+<div class="row g-4 mb-4">
     <div class="col-md-4">
         <div class="app-card p-4 h-100">
             <p class="text-muted mb-2">Total Income</p>
@@ -69,20 +71,21 @@
         </div>
     </div>
 
-<!-- Delete Account Book -->
-{% if account_books|length > 1 %}
-    <form method="POST" action="{{ url_for('delete_account_book', book_id=current_book.id) }}" 
-          style="display: inline;"
-          onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
-        <button type="submit" class="btn btn-danger">Delete "{{ current_book.bookname }}"</button>
-    </form>
-{% else %}
-    <button type="button" class="btn btn-outline-secondary" disabled>Cannot delete last account book</button>
-{% endif %}
-
-
-<button type="button" onclick="openModal()" class="btn btn-outline-primary">Export Books as CSV</button>
-
+    <div class="col-md-4">
+        <div class="app-card p-4 h-100">
+            <p class="text-muted mb-2">Budget Balance</p>
+            <h3 class="mb-0 {% if balance > 0 %}text-success{% elif balance < 0 %}text-danger{% endif %}">
+                {% if balance > 0 %}
+                    +${{ "%.2f"|format(balance) }}
+                {% elif balance < 0 %}
+                    -${{ "%.2f"|format(balance|abs) }}
+                {% else %}
+                    $0.00
+                {% endif %}
+            </h3>
+        </div>
+    </div>
+</div>
 
 <!-- Add Transaction Form -->
 <div class="app-card p-4 mb-4">
@@ -236,11 +239,10 @@
     </div>
 </div>
 
-<!-- export multiple account book modal -->
+<!-- Export multiple account books modal -->
 <div id="exportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
     <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
 
-        <!-- Title bar -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="margin: 0;">📚 Export Account Books</h3>
             <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
@@ -248,7 +250,6 @@
         
         <form method="POST" action="{{ url_for('csv.export_multiple') }}" id="exportForm">
 
-            <!-- Account book selection -->
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                     <label><strong>Select Account Books:</strong></label>
@@ -272,7 +273,6 @@
                 </div>
             </div>
             
-            <!-- Export Format Selection -->
             <div style="margin-bottom: 20px;">
                 <label><strong>Export Format:</strong></label>
                 <div style="margin-top: 10px;">
@@ -287,7 +287,6 @@
                 </div>
             </div>
             
-            <!-- Button -->
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" onclick="closeModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
                 <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Export</button>
@@ -297,23 +296,19 @@
 </div>
 
 <script>
-// Open Modal
 function openModal() {
     document.getElementById('exportModal').style.display = 'block';
 }
 
-// Close Modal
 function closeModal() {
     document.getElementById('exportModal').style.display = 'none';
 }
 
-// Select All / Deselect All
 function selectAll(select) {
     const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
     checkboxes.forEach(cb => cb.checked = select);
 }
 
-// Click outside the modal to close.
 document.getElementById('exportModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
