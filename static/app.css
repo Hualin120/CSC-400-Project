@@ -4,6 +4,7 @@ body.app-body {
     color: #1e293b;
     margin: 0;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 .app-shell {
@@ -37,8 +38,8 @@ body.app-body {
 #sidebar {
     position: fixed;
     top: 0;
-    left: -320px;
-    width: 300px;
+    left: -300px;
+    width: 280px;
     height: 100vh;
     background: linear-gradient(180deg, #2563eb, #1e40af);
     color: white;
@@ -46,6 +47,7 @@ body.app-body {
     transition: left 0.3s ease;
     z-index: 1100;
     box-shadow: 8px 0 30px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
 }
 
 #sidebar.open {
@@ -100,9 +102,24 @@ body.app-body {
     font-weight: 600;
 }
 
-main.container {
+.app-main {
     padding-top: 80px;
     padding-bottom: 40px;
+    padding-left: 24px;
+    padding-right: 24px;
+    transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* Desktop: push content when sidebar is open */
+body.sidebar-open .app-main {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
+/* Desktop: sidebar closed */
+body:not(.sidebar-open) .app-main {
+    margin-left: 0;
+    width: 100%;
 }
 
 .app-card {
@@ -222,14 +239,65 @@ p {
     border: none;
 }
 
-@media (max-width: 768px) {
+.app-flash {
+    margin-bottom: 12px;
+}
+
+.field-error {
+    margin-top: 6px;
+    color: #dc3545;
+    font-size: 0.85rem;
+}
+
+.dashboard-chart-placeholder {
+    min-height: 260px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+}
+
+/* Medium screens */
+@media (max-width: 992px) {
+    body.sidebar-open .app-main {
+        margin-left: 240px;
+        width: calc(100% - 240px);
+    }
+
+    #sidebar {
+        width: 240px;
+        left: -240px;
+    }
+
+    #sidebar.open {
+        left: 0;
+    }
+
     .app-shell {
         max-width: 100%;
+        padding: 0 12px;
+    }
+
+    .app-main {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}
+
+/* Small screens: do NOT push content, just slide menu in */
+@media (max-width: 768px) {
+    body.sidebar-open .app-main {
+        margin-left: 0;
+        width: 100%;
     }
 
     #sidebar {
         width: 250px;
-        left: -270px;
+        left: -250px;
     }
 
     #sidebar.open {
@@ -243,16 +311,46 @@ p {
     h1 {
         font-size: 1.9rem;
     }
+
+    .app-shell {
+        max-width: 100%;
+        padding: 0 10px;
+    }
+
+    .app-main {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
 }
 
-.dashboard-chart-placeholder {
-    min-height: 260px;
-    border: 2px dashed #cbd5e1;
-    border-radius: 16px;
-    background: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
+/* Extra small */
+@media (max-width: 576px) {
+    .sidebar-toggle {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+    }
+
+    #sidebar {
+        width: 230px;
+        left: -230px;
+    }
+
+    #sidebar.open {
+        left: 0;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    .app-card {
+        padding: 14px;
+        border-radius: 16px;
+    }
+
+    .btn-primary,
+    .btn-outline-primary {
+        width: 100%;
+    }
 }

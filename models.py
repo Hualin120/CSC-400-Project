@@ -77,8 +77,8 @@ class AccountBook(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='account_books')
-    incomes = db.relationship('Income', backref='account_book', lazy=True)
-    expenses = db.relationship('Expense', backref='account_book', lazy=True)
+    incomes = db.relationship('Income', backref='account_book', lazy=True, cascade='all, delete-orphan')
+    expenses = db.relationship('Expense', backref='account_book', lazy=True, cascade='all, delete-orphan')
 
 
 class Income(db.Model):

@@ -6,25 +6,18 @@
     <title>SpendSense</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='SpeedSense.ico') }}">
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Your App CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 
-<!-- ✅ Sidebar open by default -->
 <body class="app-body {% if current_user.is_authenticated %}sidebar-open{% endif %}">
 
     <nav>
         {% block navbar %}
             {% if current_user.is_authenticated %}
-                
-                <!-- Toggle Button -->
                 <button class="sidebar-toggle" id="sidebarToggle">☰</button>
 
-                <!-- ✅ Sidebar starts OPEN (no flicker) -->
-                <div class="header2 {% if current_user.is_authenticated %}open{% endif %}" id="sidebar">
+                <div id="sidebar" class="{% if current_user.is_authenticated %}open{% endif %}">
                     <ul>
                         <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
                         <li><a href="{{ url_for('transactions') }}">Transactions</a></li>
@@ -32,7 +25,6 @@
                         <li><a href="{{ url_for('logout') }}">Logout</a></li>
                     </ul>
                 </div>
-
             {% else %}
                 <div class="header">
                     <ul>
@@ -43,25 +35,23 @@
         {% endblock %}
     </nav>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="container mt-3">
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    <!-- Main Content -->
-    <main class="container">
+    <main class="app-main">
         <div class="app-shell mx-auto">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="mb-4">
+                  {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} app-flash">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
             {% block content %}{% endblock %}
         </div>
     </main>
 
-    <!-- Nav sidebar toggle -->
     <script>
     document.addEventListener("DOMContentLoaded", function () {
         const sidebarToggle = document.getElementById("sidebarToggle");
@@ -77,8 +67,6 @@
     });
     </script>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>
