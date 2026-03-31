@@ -69,26 +69,20 @@
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="app-card p-4 h-100">
-            <p class="text-muted mb-2">Budget Balance</p>
-            <h3 class="mb-0 
-                {% if balance > 0 %}
-                    text-success
-                {% elif balance < 0 %}
-                    text-danger
-                {% endif %}">
-                {% if balance > 0 %}
-                    +${{ "%.2f"|format(balance) }}
-                {% elif balance < 0 %}
-                    -${{ "%.2f"|format(balance|abs) }}
-                {% else %}
-                    $0.00
-                {% endif %}
-            </h3>
-        </div>
-    </div>
-</div>
+<!-- Delete Account Book -->
+{% if account_books|length > 1 %}
+    <form method="POST" action="{{ url_for('delete_account_book', book_id=current_book.id) }}" 
+          style="display: inline;"
+          onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
+        <button type="submit" class="btn btn-danger">Delete "{{ current_book.bookname }}"</button>
+    </form>
+{% else %}
+    <button type="button" class="btn btn-outline-secondary" disabled>Cannot delete last account book</button>
+{% endif %}
+
+
+<button type="button" onclick="openModal()" class="btn btn-outline-primary">Export Books as CSV</button>
+
 
 <!-- Add Transaction Form -->
 <div class="app-card p-4 mb-4">
