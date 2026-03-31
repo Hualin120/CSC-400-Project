@@ -1,72 +1,14 @@
-from flask import Blueprint, redirect, url_for, flash, request, current_app, make_response, render_template
+from flask import Blueprint, redirect, url_for, flash, request, make_response
 from flask_login import login_required, current_user
 from models import db, AccountBook, Income, Expense
 from datetime import datetime
 import pandas as pd
-from io import StringIO, TextIOWrapper, BytesIO
+from io import StringIO, BytesIO
 import zipfile
+
 
 csv_bp = Blueprint('csv', __name__)
 
-
-@csv_bp.route('/export')
-@login_required
-def export_csv():
-    try:
-        # get current account book
-        current_book_id = current_app.session.get('current_account_book')
-        if not current_book_id:
-            flash('Please select an account book first.', 'danger')
-            return redirect(url_for('transactions'))
-        
-        # get income, expenses
-        incomes = Income.query.filter_by(account_book_id=current_book_id).all()
-        expenses = Expense.query.filter_by(account_book_id=current_book_id).all()
-        
-        transactions = []
-        
-        for inc in incomes:
-            transactions.append({
-                'Date': inc.date.strftime('%Y-%m-%d'),
-                'Type': 'Income',
-                'Category': inc.category,
-                'Description': inc.description,
-                'Amount': inc.amount
-            })
-        
-        for exp in expenses:
-            transactions.append({
-                'Date': exp.date.strftime('%Y-%m-%d'),
-                'Type': 'Expense',
-                'Category': exp.category,
-                'Description': exp.description,
-                'Amount': exp.amount
-            })
-        
-        # Sort by Date
-        transactions.sort(key=lambda x: x['Date'], reverse=True)
-        
-        # create CSV
-        df = pd.DataFrame(transactions)
-        output = StringIO()
-        df.to_csv(output, index=False, encoding='utf-8-sig')
-        output.seek(0)
-        
-        # get account book name
-        current_book = AccountBook.query.get(current_book_id)
-        filename = f"{current_book.bookname}_transactions.csv"
-        
-        response = make_response(output.getvalue())
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
-        response.headers['Content-Type'] = 'text/csv; charset=utf-8-sig'
-        
-        flash(f'Exported {len(transactions)} transactions from "{current_book.bookname}".', 'success')
-        return response
-        
-    except Exception as e:
-        flash(f'Error exporting CSV: {str(e)}', 'danger')
-        return redirect(url_for('transactions'))
-    
 
 @csv_bp.route('/export_multiple', methods=['POST'])
 @login_required
