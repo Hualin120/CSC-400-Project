@@ -34,13 +34,7 @@
         </div>
 
         <div class="col-12 d-flex flex-wrap align-items-center gap-2">
-            {% if current_book.is_default %}
-                <button type="button" class="btn btn-outline-secondary" disabled 
-                        title="Cannot delete your default account book">
-                        Cannot delete "{{ current_book.bookname }}" (Default)
-                </button>
-
-            {% elif account_books|length > 1 %}
+            {% if account_books|length > 1 %}
                 <form method="POST"
                       action="{{ url_for('delete_account_book', book_id=current_book.id) }}"
                       onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
@@ -54,12 +48,6 @@
                 </button>
             {% endif %}
 
-            <!-- import button-->
-            <button type="button" onclick="openImportModal()" class="btn btn-outline-primary">
-                Import CSV
-            </button>
-
-            <!-- export button-->
             <button type="button" onclick="openModal()" class="btn btn-outline-primary">
                 Export Multiple Books
             </button>
@@ -98,8 +86,6 @@
         </div>
     </div>
 </div>
-
-
 
 <!-- Add Transaction Form -->
 <div class="app-card p-4 mb-4">
@@ -149,8 +135,6 @@
         </div>
     </form>
 </div>
-
-
 
 <!-- Income and Expense Tables -->
 <div class="row g-4 mb-4">
@@ -255,56 +239,6 @@
     </div>
 </div>
 
-
-
-<!-- import CSV modal -->
-<div id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-    <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0;">📤 Import CSV</h3>
-            <button onclick="closeImportModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
-        </div>
-        
-        <form method="POST" action="{{ url_for('csv.import_csv') }}" enctype="multipart/form-data" id="importForm">
-            <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 8px;">
-                <p style="margin: 0; color: #2563eb;">
-                    📓 Importing to: <strong>{{ current_book.bookname }}</strong>
-                </p>
-            </div>
-            
-            <div style="margin-bottom: 20px;">
-                <label><strong>CSV File:</strong></label>
-                <input type="file" name="csv_file" accept=".csv" required 
-                       style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
-                <small style="color: #6c757d; display: block; margin-top: 5px;">
-                    File must be CSV format with columns: Date, Type, Category, Description, Amount
-                </small>
-            </div>
-            
-            <div style="margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                <p style="margin: 0 0 5px 0; font-weight: bold;">📋 Format Example:</p>
-                <code style="font-size: 12px;">
-                    Date,Type,Category,Description,Amount<br>
-                    2024-03-31,Income,salary,Monthly salary,5000<br>
-                    2024-03-30,Expense,food,Lunch,15.5
-                </code>
-                <div style="margin-top: 8px;">
-                    <a href="{{ url_for('csv.download_template') }}" style="color: #2563eb;">Download CSV Template</a>
-                </div>
-            </div>
-            
-            <!-- Buttons -->
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" onclick="closeImportModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
-                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Import</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-
-
-
 <!-- Export multiple account books modal -->
 <div id="exportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
     <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
@@ -370,20 +304,6 @@ function closeModal() {
     document.getElementById('exportModal').style.display = 'none';
 }
 
-function openImportModal() {
-    document.getElementById('importModal').style.display = 'block';
-}
-
-function closeImportModal() {
-    document.getElementById('importModal').style.display = 'none';
-}
-
-document.getElementById('importModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeImportModal();
-    }
-});
-
 function selectAll(select) {
     const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
     checkboxes.forEach(cb => cb.checked = select);
@@ -394,54 +314,6 @@ document.getElementById('exportModal').addEventListener('click', function(e) {
         closeModal();
     }
 });
-
-
-
-function updateCategoryOptions() {
-    const typeSelect = document.querySelector('select[name="type"]');  
-    const categorySelect = document.querySelector('select[name="category"]'); 
-    
-    if (!typeSelect || !categorySelect) return;
-    
-    const selectedType = typeSelect.value;
-    
-    // identifiy income and expense type
-    const incomeCategories = [
-        { value: 'salary', label: 'Salary' },
-        { value: 'bonus', label: 'Bonus' },
-        { value: 'part_time', label: 'Part Time' },
-        { value: 'other', label: 'Other' }
-    ];
-    
-    const expenseCategories = [
-        { value: 'food', label: 'Food' },
-        { value: 'entertainment', label: 'Entertainment' },
-        { value: 'shopping', label: 'Shopping' },
-        { value: 'other', label: 'Other' }
-    ];
-    
-    const categories = selectedType === 'income' ? incomeCategories : expenseCategories;
-    
-    categorySelect.innerHTML = '';
-    
-    categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.value;
-        option.textContent = cat.label;
-        categorySelect.appendChild(option);
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const typeSelect = document.querySelector('select[name="type"]');
-    if (typeSelect) {
-
-        updateCategoryOptions();
-
-        typeSelect.addEventListener('change', updateCategoryOptions);
-    }
-});
-
 </script>
 
 {% endblock %}

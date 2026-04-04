@@ -74,7 +74,6 @@ class AccountBook(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bookname = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    is_default = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='account_books')
