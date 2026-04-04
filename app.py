@@ -570,6 +570,11 @@ def switch_account_book(book_id):
 def delete_account_book(book_id):
     try:
         book = AccountBook.query.filter_by(id=book_id, user_id=current_user.id).first_or_404()
+
+        if book.is_default:
+            flash(f'Cannot delete "{book.bookname}" because it is your default account book.', 'danger')
+            return redirect(url_for('transactions'))
+
         all_books = AccountBook.query.filter_by(user_id=current_user.id).all()
 
         current_book_id = session.get('current_account_book')
