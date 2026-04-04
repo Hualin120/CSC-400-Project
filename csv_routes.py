@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, flash, request, make_response, current_app
+from flask import Blueprint, redirect, url_for, flash, request, make_response, session
 from flask_login import login_required, current_user
 from models import db, AccountBook, Income, Expense
 from datetime import datetime
@@ -28,7 +28,7 @@ def import_csv():
             return redirect(url_for('transactions'))
         
         # getting current account book
-        current_book_id = current_app.session.get('current_account_book')
+        current_book_id = session.get('current_account_book')
         if not current_book_id:
             flash('Please select an account book first.', 'danger')
             return redirect(url_for('transactions'))
@@ -73,16 +73,16 @@ def import_csv():
                 date_str = str(row['Date']).strip()
                 try:
                     date = datetime.strptime(date_str, '%Y-%m-%d')
+
                 except:
+
                     try:
-                        date = datetime.strptime(date_str, '%m/%d/%Y')
+                        date = datetime.strptime(date_str, '%Y/%m/%d')
+
                     except:
-                        try:
-                            date = datetime.strptime(date_str, '%d/%m/%Y')
-                        except:
-                            errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use YYYY-MM-DD.")
-                            error_count += 1
-                            continue
+                        errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use YYYY-MM-DD.")
+                        error_count += 1
+                        continue
                 
                 # verify amount
                 try:
