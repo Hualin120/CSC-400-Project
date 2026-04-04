@@ -115,6 +115,18 @@ def register():
         db.session.add(user)
         db.session.commit()
 
+        default_book = AccountBook(
+            bookname = 'General',
+            user_id = user.id,
+            is_default = True
+        )
+
+        db.session.add(default_book)
+        db.session.commit()
+
+        session['current_account_book'] = default_book.id
+
+
         send_verification_code(
             user,
             subject="Verify your SpendSense account",
@@ -501,6 +513,11 @@ def switch_account_book(book_id):
 def delete_account_book(book_id):
     try:
         book = AccountBook.query.filter_by(id=book_id, user_id=current_user.id).first_or_404()
+
+        if book.is_default:
+            flash(f'Cannot delete "{book.bookname}" because it is your default account book.', 'danger')
+            return redirect(url_for('transactions'))
+
         all_books = AccountBook.query.filter_by(user_id=current_user.id).all()
 
         current_book_id = session.get('current_account_book')
