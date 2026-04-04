@@ -3,13 +3,26 @@
 {% block content %}
 
 <div class="mb-4">
-    <h1 class="fw-bold">Dashboard</h1>
-    <p class="text-muted mb-0">
-        Welcome, {{ current_user.username }}.
-    </p>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+        <div>
+            <h1 class="fw-bold mb-1">Dashboard</h1>
+            <p class="text-muted mb-0">
+                Welcome, {{ current_user.username }}.
+            </p>
+        </div>
+
+        <form method="GET" action="{{ url_for('dashboard') }}" class="d-flex align-items-center gap-2">
+            <label for="timeframe" class="form-label mb-0 fw-semibold">Timeframe</label>
+            <select name="timeframe" id="timeframe" class="form-select" onchange="this.form.submit()">
+                <option value="1m" {% if selected_timeframe == '1m' %}selected{% endif %}>This Month</option>
+                <option value="3m" {% if selected_timeframe == '3m' %}selected{% endif %}>Last 3 Months</option>
+                <option value="6m" {% if selected_timeframe == '6m' %}selected{% endif %}>Last 6 Months</option>
+                <option value="12m" {% if selected_timeframe == '12m' %}selected{% endif %}>Last 12 Months</option>
+            </select>
+        </form>
+    </div>
 </div>
 
-<!-- Top Row -->
 <div class="row g-4 mb-4">
     <div class="col-md-6 col-xl-3">
         <div class="app-card h-100">
@@ -48,12 +61,12 @@
     </div>
 </div>
 
-<!-- Middle Row -->
 <div class="row g-4 mb-4">
     <div class="col-lg-6">
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Recent Income Across All Books</h4>
+                <h4 class="mb-0">Recent Income</h4>
+                <span class="green-badge">{{ timeframe_label }}</span>
             </div>
 
             {% if recent_income %}
@@ -72,7 +85,7 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-muted mb-0">No income transactions yet.</p>
+                <p class="text-muted mb-0">No income in this timeframe.</p>
             {% endif %}
         </div>
     </div>
@@ -80,7 +93,8 @@
     <div class="col-lg-6">
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Recent Expenses Across All Books</h4>
+                <h4 class="mb-0">Recent Expenses</h4>
+                <span class="green-badge">{{ timeframe_label }}</span>
             </div>
 
             {% if recent_expenses %}
@@ -99,52 +113,49 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-muted mb-0">No expense transactions yet.</p>
+                <p class="text-muted mb-0">No expenses in this timeframe.</p>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Bottom Row -->
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Account Books Overview</h4>
-                <span class="green-badge">Summary</span>
+                <h4 class="mb-0">Account Books</h4>
+                <span class="green-badge">{{ timeframe_label }}</span>
             </div>
 
             {% if account_books_overview %}
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead>
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Income</th>
+                            <th>Expenses</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in account_books_overview %}
                             <tr>
-                                <th>Book</th>
-                                <th>Income</th>
-                                <th>Expenses</th>
-                                <th>Balance</th>
+                                <td>{{ book.bookname }}</td>
+                                <td class="text-success">${{ "%.2f"|format(book.total_income) }}</td>
+                                <td class="text-danger">${{ "%.2f"|format(book.total_expense) }}</td>
+                                <td class="{% if book.balance > 0 %}text-success{% elif book.balance < 0 %}text-danger{% else %}text-primary{% endif %}">
+                                    {% if book.balance > 0 %}
+                                        +${{ "%.2f"|format(book.balance) }}
+                                    {% elif book.balance < 0 %}
+                                        -${{ "%.2f"|format(book.balance|abs) }}
+                                    {% else %}
+                                        $0.00
+                                    {% endif %}
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for book in account_books_overview %}
-                                <tr>
-                                    <td>{{ book.bookname }}</td>
-                                    <td class="text-success">${{ "%.2f"|format(book.total_income) }}</td>
-                                    <td class="text-danger">${{ "%.2f"|format(book.total_expense) }}</td>
-                                    <td class="{% if book.balance > 0 %}text-success{% elif book.balance < 0 %}text-danger{% else %}text-primary{% endif %}">
-                                        {% if book.balance > 0 %}
-                                            +${{ "%.2f"|format(book.balance) }}
-                                        {% elif book.balance < 0 %}
-                                            -${{ "%.2f"|format(book.balance|abs) }}
-                                        {% else %}
-                                            $0.00
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
                 <p class="text-muted mb-0">No account books yet.</p>
             {% endif %}
@@ -155,19 +166,92 @@
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Spending Overview</h4>
-                <span class="green-badge">Chart Placeholder</span>
+                <span class="green-badge">{{ timeframe_label }}</span>
             </div>
 
-            <div class="dashboard-chart-placeholder">
-                <div>
-                    <p class="mb-2 fw-semibold">Chart.js placeholder</p>
-                    <p class="text-muted mb-0">
-                        This section can later show monthly spending trends, category breakdowns, or income vs expenses.
-                    </p>
-                </div>
+            <div style="height: 320px;">
+                <canvas id="incomeExpenseChart"></canvas>
             </div>
         </div>
     </div>
 </div>
+
+<script id="chart-labels" type="application/json">{{ chart_labels | tojson }}</script>
+<script id="chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
+<script id="chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var labelsElement = document.getElementById("chart-labels");
+    var incomeElement = document.getElementById("chart-income-data");
+    var expenseElement = document.getElementById("chart-expense-data");
+    var canvas = document.getElementById("incomeExpenseChart");
+
+    if (!labelsElement || !incomeElement || !expenseElement || !canvas) {
+        return;
+    }
+
+    var labels = JSON.parse(labelsElement.textContent);
+    var incomeData = JSON.parse(incomeElement.textContent);
+    var expenseData = JSON.parse(expenseElement.textContent);
+
+    var ctx = canvas.getContext("2d");
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Income",
+                    data: incomeData,
+                    backgroundColor: "rgba(34, 197, 94, 0.7)",
+                    borderColor: "rgba(34, 197, 94, 1)",
+                    borderWidth: 1,
+                    borderRadius: 6
+                },
+                {
+                    label: "Expenses",
+                    data: expenseData,
+                    backgroundColor: "rgba(239, 68, 68, 0.7)",
+                    borderColor: "rgba(239, 68, 68, 1)",
+                    borderWidth: 1,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 800
+            },
+            plugins: {
+                legend: {
+                    position: "top"
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return "$" + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
 
 {% endblock %}

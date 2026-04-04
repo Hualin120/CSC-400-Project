@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
 from sqlalchemy import or_
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, time
 
 from forms import (
     LoginForm, RegisterForm, VerifyEmailForm, ForgotPasswordForm,
@@ -16,6 +16,7 @@ from email_utils import send_email
 from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
 from auth_routes import auth_bp
 from csv_routes import csv_bp
+from collections import OrderedDict
 
 load_dotenv(override=True)
 print("MAILJET_API_KEY loaded?", bool(os.getenv("MAILJET_API_KEY")))
@@ -274,14 +275,29 @@ def reset_password(raw_token):
     return render_template("reset_password.html", form=form)
 
 
-# -------------------
-# DASHBOARD
-# -------------------
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
+    selected_timeframe = request.args.get("timeframe", "1m")
+    today = date.today()
 
+    if selected_timeframe == "3m":
+        start_date = today - timedelta(days=90)
+        timeframe_label = "Last 3 Months"
+    elif selected_timeframe == "6m":
+        start_date = today - timedelta(days=180)
+        timeframe_label = "Last 6 Months"
+    elif selected_timeframe == "12m":
+        start_date = today - timedelta(days=365)
+        timeframe_label = "Last 12 Months"
+    else:
+        start_date = today.replace(day=1)
+        timeframe_label = "This Month"
+        selected_timeframe = "1m"
+
+    start_datetime = datetime.combine(start_date, time.min)
+
+    account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
     account_book_ids = [book.id for book in account_books]
 
     all_incomes = []
@@ -290,15 +306,21 @@ def dashboard():
     if account_book_ids:
         all_incomes = (
             Income.query
-            .filter(Income.account_book_id.in_(account_book_ids))
-            .order_by(Income.date.desc())
+            .filter(
+                Income.account_book_id.in_(account_book_ids),
+                Income.date >= start_datetime
+            )
+            .order_by(Income.date.asc())
             .all()
         )
 
         all_expenses = (
             Expense.query
-            .filter(Expense.account_book_id.in_(account_book_ids))
-            .order_by(Expense.date.desc())
+            .filter(
+                Expense.account_book_id.in_(account_book_ids),
+                Expense.date >= start_datetime
+            )
+            .order_by(Expense.date.asc())
             .all()
         )
 
@@ -307,13 +329,16 @@ def dashboard():
     net_balance = total_income - total_expense
     number_of_account_books = len(account_books)
 
-    recent_income = all_incomes[:3]
-    recent_expenses = all_expenses[:3]
+    recent_income = sorted(all_incomes, key=lambda x: x.date, reverse=True)[:3]
+    recent_expenses = sorted(all_expenses, key=lambda x: x.date, reverse=True)[:3]
 
     account_books_overview = []
     for book in account_books:
-        book_total_income = sum(income.amount for income in book.incomes)
-        book_total_expense = sum(expense.amount for expense in book.expenses)
+        book_incomes = [income for income in book.incomes if income.date >= start_datetime]
+        book_expenses = [expense for expense in book.expenses if expense.date >= start_datetime]
+
+        book_total_income = sum(income.amount for income in book_incomes)
+        book_total_expense = sum(expense.amount for expense in book_expenses)
         book_balance = book_total_income - book_total_expense
 
         account_books_overview.append({
@@ -324,6 +349,35 @@ def dashboard():
             "balance": book_balance
         })
 
+    # Build monthly chart data
+    monthly_data = OrderedDict()
+
+    current_month = date(start_date.year, start_date.month, 1)
+    end_month = date(today.year, today.month, 1)
+
+    while current_month <= end_month:
+        key = current_month.strftime("%b %Y")
+        monthly_data[key] = {"income": 0, "expense": 0}
+
+        if current_month.month == 12:
+            current_month = date(current_month.year + 1, 1, 1)
+        else:
+            current_month = date(current_month.year, current_month.month + 1, 1)
+
+    for income in all_incomes:
+        key = income.date.strftime("%b %Y")
+        if key in monthly_data:
+            monthly_data[key]["income"] += float(income.amount)
+
+    for expense in all_expenses:
+        key = expense.date.strftime("%b %Y")
+        if key in monthly_data:
+            monthly_data[key]["expense"] += float(expense.amount)
+
+    chart_labels = list(monthly_data.keys())
+    chart_income_data = [monthly_data[label]["income"] for label in chart_labels]
+    chart_expense_data = [monthly_data[label]["expense"] for label in chart_labels]
+
     return render_template(
         "dashboard.html",
         total_income=total_income,
@@ -332,9 +386,13 @@ def dashboard():
         number_of_account_books=number_of_account_books,
         recent_income=recent_income,
         recent_expenses=recent_expenses,
-        account_books_overview=account_books_overview
+        account_books_overview=account_books_overview,
+        selected_timeframe=selected_timeframe,
+        timeframe_label=timeframe_label,
+        chart_labels=chart_labels,
+        chart_income_data=chart_income_data,
+        chart_expense_data=chart_expense_data
     )
-
 
 # -------------------
 # TRANSACTIONS
