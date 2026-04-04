@@ -10,7 +10,7 @@ Just like an USB, you plug it in, and you could use it immediately. If even you 
 '''
 from flask import Blueprint, redirect, url_for, flash, session, current_app
 from flask_login import login_user
-from models import db, User, AccountBook
+from models import db, User
 import os
 from authlib.integrations.flask_client import OAuth
 from werkzeug.security import generate_password_hash
@@ -125,19 +125,6 @@ def authorize_google():
 
             db.session.add(user)
             db.session.commit()
-
-            default_book = AccountBook(
-                bookname = 'General',
-                user_id = user.id,
-                is_default = True
-            )
-
-            db.session.add(default_book)
-            db.session.commit()            
-
-            session['current_account_book'] = default_book.id
-
-
             flash(f"Welcome {username}! Your account has been created.", "success")
         
         # login user
