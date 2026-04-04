@@ -86,7 +86,7 @@ def import_csv():
                                 date = datetime.strptime(date_str, '%m/%d/%y')
 
                             except:
-                                errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use YYYY-MM-DD.")
+                                errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use MM-DD-YYYY.")
                                 error_count += 1
                                 continue
                 
@@ -145,10 +145,10 @@ def import_csv():
         # commit to database
         if success_count > 0:
             db.session.commit()
-            flash(f'✅ Successfully imported {success_count} transactions into "{current_book.bookname}".', 'success')
+            flash(f'Successfully imported {success_count} transactions into "{current_book.bookname}".', 'success')
         
         if error_count > 0:
-            error_msg = f'⚠️ Failed to import {error_count} transactions.\n'
+            error_msg = f'Failed to import {error_count} transactions.\n'
             error_msg += '\n'.join(errors[:5])
             if len(errors) > 5:
                 error_msg += f'\n... and {len(errors)-5} more errors.'
@@ -168,9 +168,9 @@ def import_csv():
 def download_template():
     # download CSV template
     template_data = [
-        {'Date': '2024-03-31', 'Type': 'Income', 'Category': 'salary', 'Description': 'Monthly salary', 'Amount': 5000},
-        {'Date': '2024-03-30', 'Type': 'Expense', 'Category': 'food', 'Description': 'Lunch', 'Amount': 15.50},
-        {'Date': '2024-03-29', 'Type': 'Expense', 'Category': 'shopping', 'Description': 'Groceries', 'Amount': 45.30},
+        {'Date': '03-31-2026', 'Type': 'Income', 'Category': 'salary', 'Description': 'Monthly salary', 'Amount': 851.67},
+        {'Date': '03-30-2026', 'Type': 'Expense', 'Category': 'food', 'Description': 'Lunch', 'Amount': 15.50},
+        {'Date': '04-01-2026', 'Type': 'Expense', 'Category': 'shopping', 'Description': 'Groceries', 'Amount': 45.30},
     ]
     
     df = pd.DataFrame(template_data)
@@ -192,7 +192,7 @@ def download_template():
 def export_multiple():
     try:
         selected_book_ids = request.form.getlist('book_ids')
-        export_format = request.form.get('export_format', 'single')  # 'single' or 'separate'
+        export_format = request.form.get('export_format', 'single')
         
         if not selected_book_ids:
             flash('Please select at least one account book.', 'danger')
@@ -230,7 +230,7 @@ def export_as_single_csv(books):
         for inc in incomes:
             all_transactions.append({
                 'Account Book': book.bookname,
-                'Date': inc.date.strftime('%Y-%m-%d'),
+                'Date': inc.date.strftime('%m/%d/%Y'),
                 'Type': 'Income',
                 'Category': inc.category,
                 'Description': inc.description,
@@ -240,7 +240,7 @@ def export_as_single_csv(books):
         for exp in expenses:
             all_transactions.append({
                 'Account Book': book.bookname,
-                'Date': exp.date.strftime('%Y-%m-%d'),
+                'Date': exp.date.strftime('%m/%d/%Y'),
                 'Type': 'Expense',
                 'Category': exp.category,
                 'Description': exp.description,
@@ -320,7 +320,7 @@ def export_as_zip(books):
             
             for inc in incomes:
                 transactions.append({
-                    'Date': inc.date.strftime('%Y-%m-%d'),
+                    'Date': inc.date.strftime('%m/%d/%Y'),
                     'Type': 'Income',
                     'Category': inc.category,
                     'Description': inc.description,
@@ -329,7 +329,7 @@ def export_as_zip(books):
             
             for exp in expenses:
                 transactions.append({
-                    'Date': exp.date.strftime('%Y-%m-%d'),
+                    'Date': exp.date.strftime('%m/%d/%Y'),
                     'Type': 'Expense',
                     'Category': exp.category,
                     'Description': exp.description,

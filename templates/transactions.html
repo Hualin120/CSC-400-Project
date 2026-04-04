@@ -177,7 +177,7 @@
                         <tbody>
                             {% for t in incomes %}
                             <tr>
-                                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ t.date.strftime('%m-%d-%Y') }}</td>
                                 <td>{{ t.category }}</td>
                                 <td>{{ t.description }}</td>
                                 <td class="fw-semibold text-success">${{ "%.2f"|format(t.amount) }}</td>
@@ -227,7 +227,7 @@
                         <tbody>
                             {% for t in expenses %}
                             <tr>
-                                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ t.date.strftime('%m-%d-%Y') }}</td>
                                 <td>{{ t.category }}</td>
                                 <td>{{ t.description }}</td>
                                 <td class="fw-semibold text-danger">${{ "%.2f"|format(t.amount) }}</td>
@@ -285,8 +285,8 @@
                 <p style="margin: 0 0 5px 0; font-weight: bold;">📋 Format Example:</p>
                 <code style="font-size: 12px;">
                     Date,Type,Category,Description,Amount<br>
-                    2024/03/31,Income,salary,Monthly salary,5000<br>
-                    2024/03/30,Expense,food,Lunch,15.5
+                    03-30-2026,Income,salary,Monthly salary,5000<br>
+                    04-01-2026,Expense,food,Lunch,15.5
                 </code>
                 <div style="margin-top: 8px;">
                     <a href="{{ url_for('csv.download_template') }}" style="color: #2563eb;">Download CSV Template</a>
