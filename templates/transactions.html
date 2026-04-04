@@ -177,7 +177,7 @@
                         <tbody>
                             {% for t in incomes %}
                             <tr>
-                                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ t.date.strftime('%m/%d/%Y') }}</td>
                                 <td>{{ t.category }}</td>
                                 <td>{{ t.description }}</td>
                                 <td class="fw-semibold text-success">${{ "%.2f"|format(t.amount) }}</td>
@@ -227,7 +227,7 @@
                         <tbody>
                             {% for t in expenses %}
                             <tr>
-                                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ t.date.strftime('%m/%d/%Y') }}</td>
                                 <td>{{ t.category }}</td>
                                 <td>{{ t.description }}</td>
                                 <td class="fw-semibold text-danger">${{ "%.2f"|format(t.amount) }}</td>

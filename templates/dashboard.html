@@ -76,7 +76,7 @@
                             <div>
                                 <strong>{{ income.category }}</strong><br>
                                 <small class="text-muted">{{ income.description }}</small><br>
-                                <small class="text-muted">{{ income.date.strftime('%Y-%m-%d') }}</small>
+                                <small class="text-muted">{{ income.date.strftime('%m/%d/%Y') }}</small>
                             </div>
                             <span class="text-success fw-semibold">
                                 ${{ "%.2f"|format(income.amount) }}
@@ -104,7 +104,7 @@
                             <div>
                                 <strong>{{ expense.category }}</strong><br>
                                 <small class="text-muted">{{ expense.description }}</small><br>
-                                <small class="text-muted">{{ expense.date.strftime('%Y-%m-%d') }}</small>
+                                <small class="text-muted">{{ expense.date.strftime('%m/%d/%Y') }}</small>
                             </div>
                             <span class="text-danger fw-semibold">
                                 ${{ "%.2f"|format(expense.amount) }}
