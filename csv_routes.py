@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from models import db, AccountBook, Income, Expense
 from datetime import datetime
 import pandas as pd
-from io import StringIO, BytesIO
+from io import StringIO, BytesIO, TextIOWrapper
 import zipfile
 
 
@@ -141,7 +141,6 @@ def import_csv():
             flash(f'✅ Successfully imported {success_count} transactions into "{current_book.bookname}".', 'success')
         
         if error_count > 0:
-            # 只显示前5个错误，避免消息过长
             error_msg = f'⚠️ Failed to import {error_count} transactions.\n'
             error_msg += '\n'.join(errors[:5])
             if len(errors) > 5:
