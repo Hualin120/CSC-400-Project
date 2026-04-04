@@ -73,17 +73,24 @@ def import_csv():
                 date_str = str(row['Date']).strip()
                 try:
                     date = datetime.strptime(date_str, '%Y-%m-%d')
-
                 except:
-
                     try:
                         date = datetime.strptime(date_str, '%Y/%m/%d')
 
                     except:
-                        errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use YYYY-MM-DD.")
-                        error_count += 1
-                        continue
+                        try:
+                            date = datetime.strptime(date_str, '%m-%d-%y')
+
+                        except:
+                            try:
+                                date = datetime.strptime(date_str, '%m/%d/%y')
+
+                            except:
+                                errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use YYYY-MM-DD.")
+                                error_count += 1
+                                continue
                 
+
                 # verify amount
                 try:
                     amount = float(row['Amount'])
@@ -135,7 +142,7 @@ def import_csv():
                 errors.append(f"Row {index+2}: {str(e)}")
                 error_count += 1
         
-        # 6. commit to database
+        # commit to database
         if success_count > 0:
             db.session.commit()
             flash(f'✅ Successfully imported {success_count} transactions into "{current_book.bookname}".', 'success')

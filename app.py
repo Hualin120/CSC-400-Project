@@ -116,6 +116,17 @@ def register():
         db.session.add(user)
         db.session.commit()
 
+        default_book = AccountBook(
+            bookname = 'General',
+            user_id = user.id,
+            is_default = True
+        )
+
+        db.session.add(default_book)
+        db.session.commit()
+
+        session['current_account_book'] = default_book.id
+
         send_verification_code(
             user,
             subject="Verify your SpendSense account",
