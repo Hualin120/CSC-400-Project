@@ -71,24 +71,27 @@ def import_csv():
                 
                 # Parse Date
                 date_str = str(row['Date']).strip()
-                try:
-                    date = datetime.strptime(date_str, '%Y-%m-%d')
-                except:
+                parsed = False
+
+                for fmt in ['%Y-%m-%d', '%Y/%m/%d', '%m-%d-%Y', '%m/%d/%Y']:
                     try:
-                        date = datetime.strptime(date_str, '%Y/%m/%d')
+                        date = datetime.strptime(date_str, fmt)
+                        parsed = True
+                        break
+                    except ValueError:
+                        continue
 
-                    except:
-                        try:
-                            date = datetime.strptime(date_str, '%m-%d-%Y')
+                if not parsed:
+                    errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use MM-DD-YYYY.")
+                    error_count += 1
+                    continue
 
-                        except:
-                            try:
-                                date = datetime.strptime(date_str, '%m/%d/%Y')
-
-                            except:
-                                errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use MM-DD-YYYY.")
-                                error_count += 1
-                                continue
+                # date time cannot be later than the current time
+                today = datetime.now().date()
+                if date.date() > today:
+                    errors.append(f"Row {index+2}: Date '{date_str}'. Please select a valid past or current date.")
+                    error_count += 1
+                    continue
                 
 
                 # verify amount
