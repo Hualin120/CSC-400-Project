@@ -79,11 +79,11 @@ def import_csv():
 
                     except:
                         try:
-                            date = datetime.strptime(date_str, '%m-%d-%y')
+                            date = datetime.strptime(date_str, '%m-%d-%Y')
 
                         except:
                             try:
-                                date = datetime.strptime(date_str, '%m/%d/%y')
+                                date = datetime.strptime(date_str, '%m/%d/%Y')
 
                             except:
                                 errors.append(f"Row {index+2}: Invalid date format '{date_str}'. Use MM-DD-YYYY.")
