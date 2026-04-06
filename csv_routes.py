@@ -168,9 +168,9 @@ def import_csv():
 def download_template():
     # download CSV template
     template_data = [
-        {'Date': '03-31-2026', 'Type': 'Income', 'Category': 'salary', 'Description': 'Monthly salary', 'Amount': 851.67},
-        {'Date': '03-30-2026', 'Type': 'Expense', 'Category': 'food', 'Description': 'Lunch', 'Amount': 15.50},
-        {'Date': '04-01-2026', 'Type': 'Expense', 'Category': 'shopping', 'Description': 'Groceries', 'Amount': 45.30},
+        {'Date': '03/31/2026', 'Type': 'Income', 'Category': 'salary', 'Description': 'Monthly salary', 'Amount': 851.67},
+        {'Date': '03/30/2026', 'Type': 'Expense', 'Category': 'food', 'Description': 'Lunch', 'Amount': 15.50},
+        {'Date': '04/01/2026', 'Type': 'Expense', 'Category': 'shopping', 'Description': 'Groceries', 'Amount': 45.30},
     ]
     
     df = pd.DataFrame(template_data)
