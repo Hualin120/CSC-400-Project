@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% set total_income = incomes|map(attribute='amount')|sum %}
-{% set total_expense = expenses|map(attribute='amount')|sum %}
-{% set balance = total_income - total_expense %}
+
+{% set month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
 
 <div class="mb-4">
     <h1 class="fw-bold mb-2">Transactions</h1>
@@ -34,7 +33,13 @@
         </div>
 
         <div class="col-12 d-flex flex-wrap align-items-center gap-2">
-            {% if account_books|length > 1 %}
+            {% if current_book.is_default %}
+                <button type="button" class="btn btn-outline-secondary" disabled
+                        title="Cannot delete your default account book">
+                    Cannot delete {{ current_book.bookname }}
+                </button>
+
+            {% elif account_books|length > 1 %}
                 <form method="POST"
                       action="{{ url_for('delete_account_book', book_id=current_book.id) }}"
                       onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
@@ -47,6 +52,10 @@
                     Cannot delete last account book
                 </button>
             {% endif %}
+
+            <button type="button" onclick="openImportModal()" class="btn btn-outline-primary">
+                Import CSV
+            </button>
 
             <button type="button" onclick="openModal()" class="btn btn-outline-primary">
                 Export Multiple Books
@@ -136,9 +145,120 @@
     </form>
 </div>
 
+<!-- Chart + Filters -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="app-card h-100 p-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
+                <h4 class="mb-0">Account Book Overview</h4>
+
+                <div class="text-lg-end">
+                    <form method="GET" action="{{ url_for('transactions') }}" class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 justify-content-lg-end">
+
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 fw-semibold">Months</label>
+
+                            <div class="month-dropdown">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary month-dropdown-toggle"
+                                    id="transactionMonthDropdownButton"
+                                    {% if selected_year == 'all' %}disabled{% endif %}
+                                >
+                                    {% if selected_year == 'all' %}
+                                        All Months
+                                    {% elif selected_months|length == 12 %}
+                                        All Months
+                                    {% elif selected_months|length == 1 %}
+                                        {{ month_names[selected_months[0] - 1] }}
+                                    {% else %}
+                                        {{ selected_months|length }} Months Selected
+                                    {% endif %}
+                                </button>
+
+                                <div class="month-dropdown-menu" id="transactionMonthDropdownMenu">
+                                    <div class="month-dropdown-actions">
+                                        <button type="button" class="btn btn-sm btn-link p-0" id="transactionSelectAllMonths">Select All</button>
+                                        <button type="button" class="btn btn-sm btn-link p-0" id="transactionClearAllMonths">Clear</button>
+                                    </div>
+
+                                    <div class="month-checkbox-list">
+                                        <label class="month-checkbox-item" style="grid-column: 1 / -1; font-weight: 600;">
+                                            <input
+                                                type="checkbox"
+                                                id="transactionAllMonthsCheckbox"
+                                                {% if selected_months|length == 12 %}checked{% endif %}
+                                            >
+                                            <span>All</span>
+                                        </label>
+
+                                        {% for m in range(1, 13) %}
+                                            <label class="month-checkbox-item">
+                                                <input
+                                                    type="checkbox"
+                                                    name="months"
+                                                    value="{{ m }}"
+                                                    class="transaction-month-checkbox"
+                                                    {% if m in selected_months %}checked{% endif %}
+                                                >
+                                                <span>{{ month_names[m - 1] }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="year" class="form-label mb-0 fw-semibold">Year</label>
+                            <select
+                                name="year"
+                                id="year"
+                                class="form-select"
+                            >
+                                <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
+                                {% for y in year_options %}
+                                    <option value="{{ y }}" {% if y|string == selected_year|string %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Apply
+                        </button>
+                    </form>
+
+                    <small class="text-muted d-block mt-2">
+                        Showing:
+                        {% if selected_year == 'all' %}
+                            All Years
+                        {% else %}
+                            {% if selected_months|length == 12 %}
+                                All Months
+                            {% else %}
+                                {% for m in selected_months %}
+                                    {{ month_names[m - 1] }}{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            — {{ selected_year }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+
+            {% if chart_labels %}
+                <div style="height: 320px;">
+                    <canvas id="bookIncomeExpenseChart"></canvas>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No transaction data available for the selected period.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <!-- Income and Expense Tables -->
 <div class="row g-4 mb-4">
-    <!-- Income -->
     <div class="col-xl-6">
         <div class="app-card p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -161,7 +281,7 @@
                         <tbody>
                             {% for t in incomes %}
                             <tr>
-                                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ t.date.strftime('%m/%d/%Y') }}</td>
                                 <td>{{ t.category }}</td>
                                 <td>{{ t.description }}</td>
                                 <td class="fw-semibold text-success">${{ "%.2f"|format(t.amount) }}</td>
@@ -183,12 +303,11 @@
                     </table>
                 </div>
             {% else %}
-                <p class="text-muted mb-0">No income yet.</p>
+                <p class="text-muted mb-0">No income in the selected period.</p>
             {% endif %}
         </div>
     </div>
 
-    <!-- Expenses -->
     <div class="col-xl-6">
         <div class="app-card p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -211,7 +330,7 @@
                         <tbody>
                             {% for t in expenses %}
                             <tr>
-                                <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ t.date.strftime('%m/%d/%Y') }}</td>
                                 <td>{{ t.category }}</td>
                                 <td>{{ t.description }}</td>
                                 <td class="fw-semibold text-danger">${{ "%.2f"|format(t.amount) }}</td>
@@ -233,9 +352,57 @@
                     </table>
                 </div>
             {% else %}
-                <p class="text-muted mb-0">No expenses yet.</p>
+                <p class="text-muted mb-0">No expenses in the selected period.</p>
             {% endif %}
         </div>
+    </div>
+</div>
+
+<!-- import CSV modal -->
+<div id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">📤 Import CSV</h3>
+            <button onclick="closeImportModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+
+        <form method="POST" action="{{ url_for('csv.import_csv') }}" enctype="multipart/form-data" id="importForm">
+            <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 8px;">
+                <p style="margin: 0; color: #2563eb;">
+                    📓 Importing to: <strong>{{ current_book.bookname }}</strong>
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label><strong>CSV File:</strong></label>
+                <input type="file" name="csv_file" accept=".csv" required
+                       style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    File must be CSV format with columns: Date, Type, Category, Description, Amount
+                </small>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                <p style="margin: 0 0 5px 0; font-weight: bold;">📋 Format Example:</p>
+                <code style="font-size: 12px;">
+                    Date, Type, Category, Description, Amount<br>
+                    03/30/2026, Income, Salary, Monthly salary, 512.71<br>
+                    04/01/2026, Expense, Food, Lunch, 15.5<br><br>
+                    (Accepts lowercase)<br>
+                    date, type, category, description, amount<br>
+                    04/03/2026, expense, entertainment, game credits, 31.91<br>
+                    04/04/2026, income, refund, amazon, 35.87
+                </code>
+                <div style="margin-top: 8px;">
+                    <a href="{{ url_for('csv.download_template') }}" style="color: #2563eb;">Download CSV Template</a>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeImportModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Import</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -247,7 +414,7 @@
             <h3 style="margin: 0;">📚 Export Account Books</h3>
             <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
         </div>
-        
+
         <form method="POST" action="{{ url_for('csv.export_multiple') }}" id="exportForm">
 
             <div style="margin-bottom: 20px;">
@@ -272,7 +439,7 @@
                     {% endfor %}
                 </div>
             </div>
-            
+
             <div style="margin-bottom: 20px;">
                 <label><strong>Export Format:</strong></label>
                 <div style="margin-top: 10px;">
@@ -286,7 +453,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" onclick="closeModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
                 <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Export</button>
@@ -304,6 +471,20 @@ function closeModal() {
     document.getElementById('exportModal').style.display = 'none';
 }
 
+function openImportModal() {
+    document.getElementById('importModal').style.display = 'block';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+document.getElementById('importModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImportModal();
+    }
+});
+
 function selectAll(select) {
     const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
     checkboxes.forEach(cb => cb.checked = select);
@@ -313,6 +494,225 @@ document.getElementById('exportModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
     }
+});
+
+function updateCategoryOptions() {
+    const typeSelect = document.querySelector('select[name="type"]');
+    const categorySelect = document.querySelector('select[name="category"]');
+
+    if (!typeSelect || !categorySelect) return;
+
+    const selectedType = typeSelect.value;
+
+    const incomeCategories = [
+        { value: 'salary', label: 'Salary' },
+        { value: 'part_time', label: 'Part Time' },
+        { value: 'freelance', label: 'Freelance' },
+        { value: 'allowance', label: 'Allowance' },
+        { value: 'refund', label: 'Refund' },
+        { value: 'gift', label: 'Gift' },
+        { value: 'other', label: 'Other' }
+    ];
+
+    const expenseCategories = [
+        { value: 'housing', label: 'Housing' },
+        { value: 'utilities', label: 'Utilities' },
+        { value: 'groceries', label: 'Groceries' },
+        { value: 'food', label: 'Food' },
+        { value: 'transportation', label: 'Transportation' },
+        { value: 'insurance', label: 'Insurance' },
+        { value: 'subscriptions', label: 'Subscriptions' },
+        { value: 'entertainment', label: 'Entertainment' },
+        { value: 'shopping', label: 'Shopping' },
+        { value: 'medical', label: 'Medical' },
+        { value: 'travel', label: 'Travel' },
+        { value: 'other', label: 'Other' }
+    ];
+
+    const categories = selectedType === 'income' ? incomeCategories : expenseCategories;
+
+    categorySelect.innerHTML = '';
+
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.value;
+        option.textContent = cat.label;
+        categorySelect.appendChild(option);
+    });
+}
+</script>
+
+<script id="book-chart-labels" type="application/json">{{ chart_labels | tojson }}</script>
+<script id="book-chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
+<script id="book-chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const typeSelect = document.querySelector('select[name="type"]');
+    if (typeSelect) {
+        updateCategoryOptions();
+        typeSelect.addEventListener('change', updateCategoryOptions);
+    }
+
+    var dropdownButton = document.getElementById("transactionMonthDropdownButton");
+    var dropdownMenu = document.getElementById("transactionMonthDropdownMenu");
+    var selectAllBtn = document.getElementById("transactionSelectAllMonths");
+    var clearAllBtn = document.getElementById("transactionClearAllMonths");
+    var allMonthsCheckbox = document.getElementById("transactionAllMonthsCheckbox");
+    var monthCheckboxes = document.querySelectorAll(".transaction-month-checkbox");
+    var yearSelect = document.getElementById("year");
+
+    function syncAllCheckbox() {
+        var checkedCount = 0;
+        monthCheckboxes.forEach(function (checkbox) {
+            if (checkbox.checked) {
+                checkedCount++;
+            }
+        });
+        allMonthsCheckbox.checked = checkedCount === 12;
+    }
+
+    if (dropdownButton && dropdownMenu) {
+        dropdownButton.addEventListener("click", function (e) {
+            if (dropdownButton.disabled) return;
+            e.stopPropagation();
+            dropdownMenu.classList.toggle("show");
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!dropdownMenu.contains(e.target) && !dropdownButton.contains(e.target)) {
+                dropdownMenu.classList.remove("show");
+            }
+        });
+    }
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+            syncAllCheckbox();
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+            syncAllCheckbox();
+        });
+    }
+
+    if (allMonthsCheckbox) {
+        allMonthsCheckbox.addEventListener("change", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = allMonthsCheckbox.checked;
+            });
+        });
+    }
+
+    monthCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            syncAllCheckbox();
+        });
+    });
+
+    if (yearSelect) {
+        yearSelect.addEventListener("change", function () {
+            if (yearSelect.value === "all") {
+                monthCheckboxes.forEach(function (checkbox) {
+                    checkbox.checked = true;
+                });
+                syncAllCheckbox();
+
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove("show");
+                }
+
+                if (dropdownButton) {
+                    dropdownButton.disabled = true;
+                    dropdownButton.textContent = "All Months";
+                }
+            } else {
+                if (dropdownButton) {
+                    dropdownButton.disabled = false;
+                }
+            }
+        });
+    }
+
+    syncAllCheckbox();
+
+    var labelsElement = document.getElementById("book-chart-labels");
+    var incomeElement = document.getElementById("book-chart-income-data");
+    var expenseElement = document.getElementById("book-chart-expense-data");
+    var canvas = document.getElementById("bookIncomeExpenseChart");
+
+    if (!labelsElement || !incomeElement || !expenseElement || !canvas) {
+        return;
+    }
+
+    var labels = JSON.parse(labelsElement.textContent);
+    var incomeData = JSON.parse(incomeElement.textContent);
+    var expenseData = JSON.parse(expenseElement.textContent);
+
+    var ctx = canvas.getContext("2d");
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Income",
+                    data: incomeData,
+                    backgroundColor: "rgba(34, 197, 94, 0.7)",
+                    borderColor: "rgba(34, 197, 94, 1)",
+                    borderWidth: 1,
+                    borderRadius: 6
+                },
+                {
+                    label: "Expenses",
+                    data: expenseData,
+                    backgroundColor: "rgba(239, 68, 68, 0.7)",
+                    borderColor: "rgba(239, 68, 68, 1)",
+                    borderWidth: 1,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 800
+            },
+            plugins: {
+                legend: {
+                    position: "top"
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return "$" + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
 });
 </script>
 

@@ -2,14 +2,110 @@
 
 {% block content %}
 
+{% set month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+
 <div class="mb-4">
-    <h1 class="fw-bold">Dashboard</h1>
-    <p class="text-muted mb-0">
-        Welcome, {{ current_user.username }}.
-    </p>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+        <div>
+            <h1 class="fw-bold mb-1">Dashboard</h1>
+            <p class="text-muted mb-0">
+                Welcome, {{ current_user.username }}.
+            </p>
+        </div>
+
+        <div>
+            <form method="GET" action="{{ url_for('dashboard') }}" class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 fw-semibold">Months</label>
+
+                    <div class="month-dropdown">
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary month-dropdown-toggle"
+                            id="monthDropdownButton"
+                            {% if selected_year == 'all' %}disabled{% endif %}
+                        >
+                            {% if selected_year == 'all' %}
+                                All Months
+                            {% elif selected_months|length == 12 %}
+                                All Months
+                            {% elif selected_months|length == 1 %}
+                                {{ month_names[selected_months[0] - 1] }}
+                            {% else %}
+                                {{ selected_months|length }} Months Selected
+                            {% endif %}
+                        </button>
+
+                        <div class="month-dropdown-menu" id="monthDropdownMenu">
+                            <div class="month-dropdown-actions">
+                                <button type="button" class="btn btn-sm btn-link p-0" id="selectAllMonths">Select All</button>
+                                <button type="button" class="btn btn-sm btn-link p-0" id="clearAllMonths">Clear</button>
+                            </div>
+
+                            <div class="month-checkbox-list">
+                                <label class="month-checkbox-item" style="grid-column: 1 / -1; font-weight: 600;">
+                                    <input
+                                        type="checkbox"
+                                        id="allMonthsCheckbox"
+                                        {% if selected_months|length == 12 %}checked{% endif %}
+                                    >
+                                    <span>All</span>
+                                </label>
+
+                                {% for m in range(1, 13) %}
+                                    <label class="month-checkbox-item">
+                                        <input
+                                            type="checkbox"
+                                            name="months"
+                                            value="{{ m }}"
+                                            class="month-checkbox"
+                                            {% if m in selected_months %}checked{% endif %}
+                                        >
+                                        <span>{{ month_names[m - 1] }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <label for="year" class="form-label mb-0 fw-semibold">Year</label>
+                    <select
+                        name="year"
+                        id="year"
+                        class="form-select"
+                    >
+                        <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
+                        {% for y in year_options %}
+                            <option value="{{ y }}" {% if y|string == selected_year|string %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Apply
+                </button>
+            </form>
+
+            <small class="text-muted d-block mt-2">
+                Showing:
+                {% if selected_year == 'all' %}
+                    All Years
+                {% elif selected_months|length == 12 %}
+                    All Months {{ selected_year }}
+                {% else %}
+                    {% for m in selected_months %}
+                        {{ month_names[m - 1] }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                    {{ selected_year }}
+                {% endif %}
+            </small>
+        </div>
+    </div>
 </div>
 
-<!-- Top Row -->
 <div class="row g-4 mb-4">
     <div class="col-md-6 col-xl-3">
         <div class="app-card h-100">
@@ -48,12 +144,11 @@
     </div>
 </div>
 
-<!-- Middle Row -->
 <div class="row g-4 mb-4">
     <div class="col-lg-6">
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Recent Income Across All Books</h4>
+                <h4 class="mb-0">Recent Income</h4>
             </div>
 
             {% if recent_income %}
@@ -63,7 +158,7 @@
                             <div>
                                 <strong>{{ income.category }}</strong><br>
                                 <small class="text-muted">{{ income.description }}</small><br>
-                                <small class="text-muted">{{ income.date.strftime('%Y-%m-%d') }}</small>
+                                <small class="text-muted">{{ income.date.strftime('%m/%d/%Y') }}</small>
                             </div>
                             <span class="text-success fw-semibold">
                                 ${{ "%.2f"|format(income.amount) }}
@@ -72,7 +167,7 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-muted mb-0">No income transactions yet.</p>
+                <p class="text-muted mb-0">No income in the selected period.</p>
             {% endif %}
         </div>
     </div>
@@ -80,7 +175,7 @@
     <div class="col-lg-6">
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Recent Expenses Across All Books</h4>
+                <h4 class="mb-0">Recent Expenses</h4>
             </div>
 
             {% if recent_expenses %}
@@ -90,7 +185,7 @@
                             <div>
                                 <strong>{{ expense.category }}</strong><br>
                                 <small class="text-muted">{{ expense.description }}</small><br>
-                                <small class="text-muted">{{ expense.date.strftime('%Y-%m-%d') }}</small>
+                                <small class="text-muted">{{ expense.date.strftime('%m/%d/%Y') }}</small>
                             </div>
                             <span class="text-danger fw-semibold">
                                 ${{ "%.2f"|format(expense.amount) }}
@@ -99,52 +194,48 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-muted mb-0">No expense transactions yet.</p>
+                <p class="text-muted mb-0">No expenses in the selected period.</p>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Bottom Row -->
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4 class="mb-0">Account Books Overview</h4>
-                <span class="green-badge">Summary</span>
+                <h4 class="mb-0">Account Books</h4>
             </div>
 
             {% if account_books_overview %}
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead>
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Income</th>
+                            <th>Expenses</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in account_books_overview %}
                             <tr>
-                                <th>Book</th>
-                                <th>Income</th>
-                                <th>Expenses</th>
-                                <th>Balance</th>
+                                <td>{{ book.bookname }}</td>
+                                <td class="text-success">${{ "%.2f"|format(book.total_income) }}</td>
+                                <td class="text-danger">${{ "%.2f"|format(book.total_expense) }}</td>
+                                <td class="{% if book.balance > 0 %}text-success{% elif book.balance < 0 %}text-danger{% else %}text-primary{% endif %}">
+                                    {% if book.balance > 0 %}
+                                        +${{ "%.2f"|format(book.balance) }}
+                                    {% elif book.balance < 0 %}
+                                        -${{ "%.2f"|format(book.balance|abs) }}
+                                    {% else %}
+                                        $0.00
+                                    {% endif %}
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for book in account_books_overview %}
-                                <tr>
-                                    <td>{{ book.bookname }}</td>
-                                    <td class="text-success">${{ "%.2f"|format(book.total_income) }}</td>
-                                    <td class="text-danger">${{ "%.2f"|format(book.total_expense) }}</td>
-                                    <td class="{% if book.balance > 0 %}text-success{% elif book.balance < 0 %}text-danger{% else %}text-primary{% endif %}">
-                                        {% if book.balance > 0 %}
-                                            +${{ "%.2f"|format(book.balance) }}
-                                        {% elif book.balance < 0 %}
-                                            -${{ "%.2f"|format(book.balance|abs) }}
-                                        {% else %}
-                                            $0.00
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
                 <p class="text-muted mb-0">No account books yet.</p>
             {% endif %}
@@ -155,19 +246,181 @@
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Spending Overview</h4>
-                <span class="green-badge">Chart Placeholder</span>
             </div>
 
-            <div class="dashboard-chart-placeholder">
-                <div>
-                    <p class="mb-2 fw-semibold">Chart.js placeholder</p>
-                    <p class="text-muted mb-0">
-                        This section can later show monthly spending trends, category breakdowns, or income vs expenses.
-                    </p>
-                </div>
+            <div style="height: 320px;">
+                <canvas id="incomeExpenseChart"></canvas>
             </div>
         </div>
     </div>
 </div>
+
+<script id="chart-labels" type="application/json">{{ chart_labels | tojson }}</script>
+<script id="chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
+<script id="chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var dropdownButton = document.getElementById("monthDropdownButton");
+    var dropdownMenu = document.getElementById("monthDropdownMenu");
+    var selectAllBtn = document.getElementById("selectAllMonths");
+    var clearAllBtn = document.getElementById("clearAllMonths");
+    var allMonthsCheckbox = document.getElementById("allMonthsCheckbox");
+    var monthCheckboxes = document.querySelectorAll(".month-checkbox");
+    var yearSelect = document.getElementById("year");
+
+    function syncAllCheckbox() {
+        var checkedCount = 0;
+        monthCheckboxes.forEach(function (checkbox) {
+            if (checkbox.checked) {
+                checkedCount++;
+            }
+        });
+        allMonthsCheckbox.checked = checkedCount === 12;
+    }
+
+    if (dropdownButton && dropdownMenu) {
+        dropdownButton.addEventListener("click", function (e) {
+            if (dropdownButton.disabled) return;
+            e.stopPropagation();
+            dropdownMenu.classList.toggle("show");
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!dropdownMenu.contains(e.target) && !dropdownButton.contains(e.target)) {
+                dropdownMenu.classList.remove("show");
+            }
+        });
+    }
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+            syncAllCheckbox();
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+            syncAllCheckbox();
+        });
+    }
+
+    if (allMonthsCheckbox) {
+        allMonthsCheckbox.addEventListener("change", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = allMonthsCheckbox.checked;
+            });
+        });
+    }
+
+    monthCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            syncAllCheckbox();
+        });
+    });
+
+    if (yearSelect) {
+        yearSelect.addEventListener("change", function () {
+            if (yearSelect.value === "all") {
+                monthCheckboxes.forEach(function (checkbox) {
+                    checkbox.checked = true;
+                });
+                syncAllCheckbox();
+
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove("show");
+                }
+
+                if (dropdownButton) {
+                    dropdownButton.disabled = true;
+                    dropdownButton.textContent = "All Months";
+                }
+            } else {
+                if (dropdownButton) {
+                    dropdownButton.disabled = false;
+                }
+            }
+        });
+    }
+
+    syncAllCheckbox();
+
+    var labelsElement = document.getElementById("chart-labels");
+    var incomeElement = document.getElementById("chart-income-data");
+    var expenseElement = document.getElementById("chart-expense-data");
+    var canvas = document.getElementById("incomeExpenseChart");
+
+    if (!labelsElement || !incomeElement || !expenseElement || !canvas) {
+        return;
+    }
+
+    var labels = JSON.parse(labelsElement.textContent);
+    var incomeData = JSON.parse(incomeElement.textContent);
+    var expenseData = JSON.parse(expenseElement.textContent);
+
+    var ctx = canvas.getContext("2d");
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Income",
+                    data: incomeData,
+                    backgroundColor: "rgba(34, 197, 94, 0.7)",
+                    borderColor: "rgba(34, 197, 94, 1)",
+                    borderWidth: 1,
+                    borderRadius: 6
+                },
+                {
+                    label: "Expenses",
+                    data: expenseData,
+                    backgroundColor: "rgba(239, 68, 68, 0.7)",
+                    borderColor: "rgba(239, 68, 68, 1)",
+                    borderWidth: 1,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 800
+            },
+            plugins: {
+                legend: {
+                    position: "top"
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return "$" + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
 
 {% endblock %}
