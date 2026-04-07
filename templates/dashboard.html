@@ -2,6 +2,8 @@
 
 {% block content %}
 
+{% set month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+
 <div class="mb-4">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
         <div>
@@ -11,15 +13,90 @@
             </p>
         </div>
 
-        <form method="GET" action="{{ url_for('dashboard') }}" class="d-flex align-items-center gap-2">
-            <label for="timeframe" class="form-label mb-0 fw-semibold">Timeframe</label>
-            <select name="timeframe" id="timeframe" class="form-select" onchange="this.form.submit()">
-                <option value="1m" {% if selected_timeframe == '1m' %}selected{% endif %}>This Month</option>
-                <option value="3m" {% if selected_timeframe == '3m' %}selected{% endif %}>Last 3 Months</option>
-                <option value="6m" {% if selected_timeframe == '6m' %}selected{% endif %}>Last 6 Months</option>
-                <option value="12m" {% if selected_timeframe == '12m' %}selected{% endif %}>Last 12 Months</option>
-            </select>
-        </form>
+        <div>
+            <form method="GET" action="{{ url_for('dashboard') }}" class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 fw-semibold">Months</label>
+
+                    <div class="month-dropdown">
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary month-dropdown-toggle"
+                            id="monthDropdownButton"
+                        >
+                            {% if selected_months|length == 12 %}
+                                All Months
+                            {% elif selected_months|length == 1 %}
+                                {{ month_names[selected_months[0] - 1] }}
+                            {% else %}
+                                {{ selected_months|length }} Months Selected
+                            {% endif %}
+                        </button>
+
+                        <div class="month-dropdown-menu" id="monthDropdownMenu">
+                            <div class="month-dropdown-actions">
+                                <button type="button" class="btn btn-sm btn-link p-0" id="selectAllMonths">Select All</button>
+                                <button type="button" class="btn btn-sm btn-link p-0" id="clearAllMonths">Clear</button>
+                            </div>
+
+                            <div class="month-checkbox-list">
+                                <label class="month-checkbox-item" style="grid-column: 1 / -1; font-weight: 600;">
+                                    <input
+                                        type="checkbox"
+                                        id="allMonthsCheckbox"
+                                        {% if selected_months|length == 12 %}checked{% endif %}
+                                    >
+                                    <span>All</span>
+                                </label>
+
+                                {% for m in range(1, 13) %}
+                                    <label class="month-checkbox-item">
+                                        <input
+                                            type="checkbox"
+                                            name="months"
+                                            value="{{ m }}"
+                                            class="month-checkbox"
+                                            {% if m in selected_months %}checked{% endif %}
+                                        >
+                                        <span>{{ month_names[m - 1] }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <label for="year" class="form-label mb-0 fw-semibold">Year</label>
+                    <select
+                        name="year"
+                        id="year"
+                        class="form-select"
+                    >
+                        {% for y in year_options %}
+                            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Apply
+                </button>
+            </form>
+
+            <small class="text-muted d-block mt-2">
+                Showing:
+                {% if selected_months|length == 12 %}
+                    All Months {{ selected_year }}
+                {% else %}
+                    {% for m in selected_months %}
+                        {{ month_names[m - 1] }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                    {{ selected_year }}
+                {% endif %}
+            </small>
+        </div>
     </div>
 </div>
 
@@ -84,7 +161,7 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-muted mb-0">No income in this timeframe.</p>
+                <p class="text-muted mb-0">No income in the selected period.</p>
             {% endif %}
         </div>
     </div>
@@ -111,7 +188,7 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p class="text-muted mb-0">No expenses in this timeframe.</p>
+                <p class="text-muted mb-0">No expenses in the selected period.</p>
             {% endif %}
         </div>
     </div>
@@ -177,8 +254,73 @@
 <script id="chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    var dropdownButton = document.getElementById("monthDropdownButton");
+    var dropdownMenu = document.getElementById("monthDropdownMenu");
+    var selectAllBtn = document.getElementById("selectAllMonths");
+    var clearAllBtn = document.getElementById("clearAllMonths");
+    var allMonthsCheckbox = document.getElementById("allMonthsCheckbox");
+    var monthCheckboxes = document.querySelectorAll(".month-checkbox");
+
+    function syncAllCheckbox() {
+        var checkedCount = 0;
+        monthCheckboxes.forEach(function (checkbox) {
+            if (checkbox.checked) {
+                checkedCount++;
+            }
+        });
+        allMonthsCheckbox.checked = checkedCount === 12;
+    }
+
+    if (dropdownButton && dropdownMenu) {
+        dropdownButton.addEventListener("click", function (e) {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle("show");
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!dropdownMenu.contains(e.target) && !dropdownButton.contains(e.target)) {
+                dropdownMenu.classList.remove("show");
+            }
+        });
+    }
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+            syncAllCheckbox();
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+            syncAllCheckbox();
+        });
+    }
+
+    if (allMonthsCheckbox) {
+        allMonthsCheckbox.addEventListener("change", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = allMonthsCheckbox.checked;
+            });
+        });
+    }
+
+    monthCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            syncAllCheckbox();
+        });
+    });
+
+    syncAllCheckbox();
+
     var labelsElement = document.getElementById("chart-labels");
     var incomeElement = document.getElementById("chart-income-data");
     var expenseElement = document.getElementById("chart-expense-data");

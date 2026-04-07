@@ -3,7 +3,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
-from sqlalchemy import or_
+from sqlalchemy import or_, extract
 from datetime import datetime, timedelta, date, time
 
 from forms import (
@@ -289,24 +289,13 @@ def reset_password(raw_token):
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    selected_timeframe = request.args.get("timeframe", "1m")
-    today = date.today()
+    selected_year = int(request.args.get("year", date.today().year))
+    selected_months = request.args.getlist("months")
 
-    if selected_timeframe == "3m":
-        start_date = today - timedelta(days=90)
-        timeframe_label = "Last 3 Months"
-    elif selected_timeframe == "6m":
-        start_date = today - timedelta(days=180)
-        timeframe_label = "Last 6 Months"
-    elif selected_timeframe == "12m":
-        start_date = today - timedelta(days=365)
-        timeframe_label = "Last 12 Months"
+    if selected_months:
+        selected_months = [int(month) for month in selected_months]
     else:
-        start_date = today.replace(day=1)
-        timeframe_label = "This Month"
-        selected_timeframe = "1m"
-
-    start_datetime = datetime.combine(start_date, time.min)
+        selected_months = list(range(1, 13))
 
     account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
     account_book_ids = [book.id for book in account_books]
@@ -314,12 +303,29 @@ def dashboard():
     all_incomes = []
     all_expenses = []
 
+    # Get all transactions for year range detection
+    all_user_incomes = []
+    all_user_expenses = []
+
     if account_book_ids:
+        all_user_incomes = (
+            Income.query
+            .filter(Income.account_book_id.in_(account_book_ids))
+            .all()
+        )
+
+        all_user_expenses = (
+            Expense.query
+            .filter(Expense.account_book_id.in_(account_book_ids))
+            .all()
+        )
+
         all_incomes = (
             Income.query
             .filter(
                 Income.account_book_id.in_(account_book_ids),
-                Income.date >= start_datetime
+                extract('year', Income.date) == selected_year,
+                extract('month', Income.date).in_(selected_months)
             )
             .order_by(Income.date.asc())
             .all()
@@ -329,11 +335,48 @@ def dashboard():
             Expense.query
             .filter(
                 Expense.account_book_id.in_(account_book_ids),
-                Expense.date >= start_datetime
+                extract('year', Expense.date) == selected_year,
+                extract('month', Expense.date).in_(selected_months)
             )
             .order_by(Expense.date.asc())
             .all()
         )
+
+    # Build dynamic year options
+    current_year = date.today().year
+    transaction_years = [
+        transaction.date.year for transaction in (all_user_incomes + all_user_expenses)
+        if transaction.date
+    ]
+
+    earliest_year = min(transaction_years) if transaction_years else current_year
+    year_options = list(range(earliest_year, current_year + 1))
+
+    # Safety: if selected_year is outside the detected range, reset it
+    if selected_year < earliest_year or selected_year > current_year:
+        selected_year = current_year
+
+        all_incomes = (
+            Income.query
+            .filter(
+                Income.account_book_id.in_(account_book_ids),
+                extract('year', Income.date) == selected_year,
+                extract('month', Income.date).in_(selected_months)
+            )
+            .order_by(Income.date.asc())
+            .all()
+        ) if account_book_ids else []
+
+        all_expenses = (
+            Expense.query
+            .filter(
+                Expense.account_book_id.in_(account_book_ids),
+                extract('year', Expense.date) == selected_year,
+                extract('month', Expense.date).in_(selected_months)
+            )
+            .order_by(Expense.date.asc())
+            .all()
+        ) if account_book_ids else []
 
     total_income = sum(income.amount for income in all_incomes)
     total_expense = sum(expense.amount for expense in all_expenses)
@@ -345,8 +388,14 @@ def dashboard():
 
     account_books_overview = []
     for book in account_books:
-        book_incomes = [income for income in book.incomes if income.date >= start_datetime]
-        book_expenses = [expense for expense in book.expenses if expense.date >= start_datetime]
+        book_incomes = [
+            income for income in book.incomes
+            if income.date.year == selected_year and income.date.month in selected_months
+        ]
+        book_expenses = [
+            expense for expense in book.expenses
+            if expense.date.year == selected_year and expense.date.month in selected_months
+        ]
 
         book_total_income = sum(income.amount for income in book_incomes)
         book_total_expense = sum(expense.amount for expense in book_expenses)
@@ -360,30 +409,28 @@ def dashboard():
             "balance": book_balance
         })
 
-    # Build monthly chart data
+    month_names = {
+        1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr",
+        5: "May", 6: "Jun", 7: "Jul", 8: "Aug",
+        9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"
+    }
+
+    sorted_months = sorted(selected_months)
     monthly_data = OrderedDict()
 
-    current_month = date(start_date.year, start_date.month, 1)
-    end_month = date(today.year, today.month, 1)
-
-    while current_month <= end_month:
-        key = current_month.strftime("%b %Y")
-        monthly_data[key] = {"income": 0, "expense": 0}
-
-        if current_month.month == 12:
-            current_month = date(current_month.year + 1, 1, 1)
-        else:
-            current_month = date(current_month.year, current_month.month + 1, 1)
+    for month in sorted_months:
+        label = f"{month_names[month]} {selected_year}"
+        monthly_data[label] = {"income": 0, "expense": 0}
 
     for income in all_incomes:
-        key = income.date.strftime("%b %Y")
-        if key in monthly_data:
-            monthly_data[key]["income"] += float(income.amount)
+        label = f"{month_names[income.date.month]} {income.date.year}"
+        if label in monthly_data:
+            monthly_data[label]["income"] += float(income.amount)
 
     for expense in all_expenses:
-        key = expense.date.strftime("%b %Y")
-        if key in monthly_data:
-            monthly_data[key]["expense"] += float(expense.amount)
+        label = f"{month_names[expense.date.month]} {expense.date.year}"
+        if label in monthly_data:
+            monthly_data[label]["expense"] += float(expense.amount)
 
     chart_labels = list(monthly_data.keys())
     chart_income_data = [monthly_data[label]["income"] for label in chart_labels]
@@ -398,8 +445,9 @@ def dashboard():
         recent_income=recent_income,
         recent_expenses=recent_expenses,
         account_books_overview=account_books_overview,
-        selected_timeframe=selected_timeframe,
-        timeframe_label=timeframe_label,
+        selected_year=selected_year,
+        selected_months=selected_months,
+        year_options=year_options,
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
         chart_expense_data=chart_expense_data
