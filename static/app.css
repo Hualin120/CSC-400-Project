@@ -427,3 +427,17 @@ p {
 .month-checkbox-item input {
     cursor: pointer;
 }
+
+.transaction-chart-title {
+    line-height: 1.1;
+}
+
+.transaction-chart-filters .form-select,
+.transaction-chart-filters .btn,
+.transaction-chart-filters .month-dropdown-toggle {
+    height: 42px;
+}
+
+.transaction-chart-filters .form-label {
+    white-space: nowrap;
+}
