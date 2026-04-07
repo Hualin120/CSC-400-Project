@@ -15,7 +15,7 @@
 
         <div>
             <form method="GET" action="{{ url_for('dashboard') }}" class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
-                
+
                 <div class="d-flex align-items-center gap-2">
                     <label class="form-label mb-0 fw-semibold">Months</label>
 
@@ -24,8 +24,11 @@
                             type="button"
                             class="btn btn-outline-secondary month-dropdown-toggle"
                             id="monthDropdownButton"
+                            {% if selected_year == 'all' %}disabled{% endif %}
                         >
-                            {% if selected_months|length == 12 %}
+                            {% if selected_year == 'all' %}
+                                All Months
+                            {% elif selected_months|length == 12 %}
                                 All Months
                             {% elif selected_months|length == 1 %}
                                 {{ month_names[selected_months[0] - 1] }}
@@ -74,8 +77,9 @@
                         id="year"
                         class="form-select"
                     >
+                        <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
                         {% for y in year_options %}
-                            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                            <option value="{{ y }}" {% if y|string == selected_year|string %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -87,7 +91,9 @@
 
             <small class="text-muted d-block mt-2">
                 Showing:
-                {% if selected_months|length == 12 %}
+                {% if selected_year == 'all' %}
+                    All Years
+                {% elif selected_months|length == 12 %}
                     All Months {{ selected_year }}
                 {% else %}
                     {% for m in selected_months %}
@@ -254,7 +260,6 @@
 <script id="chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     var dropdownButton = document.getElementById("monthDropdownButton");
@@ -263,6 +268,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var clearAllBtn = document.getElementById("clearAllMonths");
     var allMonthsCheckbox = document.getElementById("allMonthsCheckbox");
     var monthCheckboxes = document.querySelectorAll(".month-checkbox");
+    var yearSelect = document.getElementById("year");
 
     function syncAllCheckbox() {
         var checkedCount = 0;
@@ -276,6 +282,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (dropdownButton && dropdownMenu) {
         dropdownButton.addEventListener("click", function (e) {
+            if (dropdownButton.disabled) return;
             e.stopPropagation();
             dropdownMenu.classList.toggle("show");
         });
@@ -318,6 +325,30 @@ document.addEventListener("DOMContentLoaded", function () {
             syncAllCheckbox();
         });
     });
+
+    if (yearSelect) {
+        yearSelect.addEventListener("change", function () {
+            if (yearSelect.value === "all") {
+                monthCheckboxes.forEach(function (checkbox) {
+                    checkbox.checked = true;
+                });
+                syncAllCheckbox();
+
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove("show");
+                }
+
+                if (dropdownButton) {
+                    dropdownButton.disabled = true;
+                    dropdownButton.textContent = "All Months";
+                }
+            } else {
+                if (dropdownButton) {
+                    dropdownButton.disabled = false;
+                }
+            }
+        });
+    }
 
     syncAllCheckbox();
 
