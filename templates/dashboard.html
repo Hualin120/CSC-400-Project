@@ -600,10 +600,18 @@ document.addEventListener("DOMContentLoaded", function () {
         currentChart = new Chart(ctx, buildChartConfig(chartType));
     }
 
-    renderChart("bar");
+    const dashboardChartStorageKey = "dashboardChartType";
+    const savedDashboardChartType = localStorage.getItem(dashboardChartStorageKey) || "bar";
+
+    if (chartTypeSelect) {
+        chartTypeSelect.value = savedDashboardChartType;
+    }
+
+    renderChart(savedDashboardChartType);
 
     if (chartTypeSelect) {
         chartTypeSelect.addEventListener("change", function () {
+            localStorage.setItem(dashboardChartStorageKey, chartTypeSelect.value);
             renderChart(chartTypeSelect.value);
         });
     }

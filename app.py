@@ -510,17 +510,13 @@ def transactions():
     else:
         selected_year_int = None
 
-    filtered_incomes = [
-        income for income in all_incomes
-        if selected_year == "all"
-        or (income.date.year == selected_year_int and income.date.month in selected_months)
-    ]
+    def matches_filter(t):
+        if selected_year == "all":
+            return True
+        return t.date.year == selected_year_int and t.date.month in selected_months
 
-    filtered_expenses = [
-        expense for expense in all_expenses
-        if selected_year == "all"
-        or (expense.date.year == selected_year_int and expense.date.month in selected_months)
-    ]
+    filtered_incomes = [income for income in all_incomes if matches_filter(income)]
+    filtered_expenses = [expense for expense in all_expenses if matches_filter(expense)]
 
     total_income = sum(income.amount for income in filtered_incomes)
     total_expense = sum(expense.amount for expense in filtered_expenses)
@@ -612,6 +608,17 @@ def transactions():
     chart_income_data = [chart_data[label]["income"] for label in chart_labels]
     chart_expense_data = [chart_data[label]["expense"] for label in chart_labels]
 
+    # PIE CHART DATA = CATEGORY COUNTS, NOT AMOUNTS
+    income_category_counts = OrderedDict()
+    for income in filtered_incomes:
+        category = income.category or "Other"
+        income_category_counts[category] = income_category_counts.get(category, 0) + 1
+
+    expense_category_counts = OrderedDict()
+    for expense in filtered_expenses:
+        category = expense.category or "Other"
+        expense_category_counts[category] = expense_category_counts.get(category, 0) + 1
+
     form = TransactionForm()
 
     return render_template(
@@ -630,7 +637,11 @@ def transactions():
         year_options=year_options,
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
-        chart_expense_data=chart_expense_data
+        chart_expense_data=chart_expense_data,
+        income_category_labels=list(income_category_counts.keys()),
+        income_category_data=list(income_category_counts.values()),
+        expense_category_labels=list(expense_category_counts.keys()),
+        expense_category_data=list(expense_category_counts.values())
     )
 
 @app.route('/add_transaction', methods=['POST'])

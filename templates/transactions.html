@@ -149,9 +149,11 @@
                 <div class="d-flex align-items-center gap-2">
                     <h4 class="mb-0">Account Book Overview</h4>
 
-                    <select id="transactionChartType" class="form-select" style="max-width: 180px;">
+                    <select id="transactionChartType" class="form-select" style="max-width: 200px;">
                         <option value="bar" selected>Bar Chart</option>
                         <option value="line">Line Chart</option>
+                        <option value="incomePie">Income Categories</option>
+                        <option value="expensePie">Expense Categories</option>
                     </select>
                 </div>
 
@@ -464,6 +466,11 @@
 <script id="book-chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
 <script id="book-chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
 
+<script id="income-category-labels" type="application/json">{{ income_category_labels | tojson }}</script>
+<script id="income-category-data" type="application/json">{{ income_category_data | tojson }}</script>
+<script id="expense-category-labels" type="application/json">{{ expense_category_labels | tojson }}</script>
+<script id="expense-category-data" type="application/json">{{ expense_category_data | tojson }}</script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
@@ -558,9 +565,7 @@ function setupMonthDropdown(config) {
     function getCheckedCount() {
         var checkedCount = 0;
         monthCheckboxes.forEach(function (checkbox) {
-            if (checkbox.checked) {
-                checkedCount++;
-            }
+            if (checkbox.checked) checkedCount++;
         });
         return checkedCount;
     }
@@ -581,9 +586,7 @@ function setupMonthDropdown(config) {
 
         var checked = [];
         monthCheckboxes.forEach(function (checkbox) {
-            if (checkbox.checked) {
-                checked.push(parseInt(checkbox.value, 10));
-            }
+            if (checkbox.checked) checked.push(parseInt(checkbox.value, 10));
         });
 
         if (checked.length === 12 || checked.length === 0) {
@@ -653,17 +656,10 @@ function setupMonthDropdown(config) {
                 });
                 syncAllCheckbox();
 
-                if (dropdownMenu) {
-                    dropdownMenu.classList.remove("show");
-                }
-
-                if (dropdownButton) {
-                    dropdownButton.disabled = true;
-                }
+                if (dropdownMenu) dropdownMenu.classList.remove("show");
+                if (dropdownButton) dropdownButton.disabled = true;
             } else {
-                if (dropdownButton) {
-                    dropdownButton.disabled = false;
-                }
+                if (dropdownButton) dropdownButton.disabled = false;
             }
 
             updateButtonText();
@@ -691,22 +687,31 @@ document.addEventListener("DOMContentLoaded", function() {
         yearSelectId: "year"
     });
 
-    var labelsElement = document.getElementById("book-chart-labels");
-    var incomeElement = document.getElementById("book-chart-income-data");
-    var expenseElement = document.getElementById("book-chart-expense-data");
+    var labels = JSON.parse(document.getElementById("book-chart-labels").textContent);
+    var incomeData = JSON.parse(document.getElementById("book-chart-income-data").textContent);
+    var expenseData = JSON.parse(document.getElementById("book-chart-expense-data").textContent);
+
+    var incomeCategoryLabels = JSON.parse(document.getElementById("income-category-labels").textContent);
+    var incomeCategoryData = JSON.parse(document.getElementById("income-category-data").textContent);
+    var expenseCategoryLabels = JSON.parse(document.getElementById("expense-category-labels").textContent);
+    var expenseCategoryData = JSON.parse(document.getElementById("expense-category-data").textContent);
+
     var canvas = document.getElementById("bookIncomeExpenseChart");
     var chartTypeSelect = document.getElementById("transactionChartType");
 
-    if (!labelsElement || !incomeElement || !expenseElement || !canvas) {
-        return;
-    }
-
-    var labels = JSON.parse(labelsElement.textContent);
-    var incomeData = JSON.parse(incomeElement.textContent);
-    var expenseData = JSON.parse(expenseElement.textContent);
+    if (!canvas) return;
 
     var ctx = canvas.getContext("2d");
     var currentChart;
+
+    function pieTooltipLabel(context) {
+        const data = context.dataset.data || [];
+        const total = data.reduce((sum, value) => sum + Number(value || 0), 0);
+        const value = Number(context.raw || 0);
+        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+        const word = value === 1 ? "transaction" : "transactions";
+        return `${context.label}: ${value} ${word} (${percent}%)`;
+    }
 
     function buildChartConfig(chartType) {
         if (chartType === "line") {
@@ -742,13 +747,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: {
-                        duration: 800
-                    },
+                    animation: { duration: 800 },
                     plugins: {
-                        legend: {
-                            position: "top"
-                        },
+                        legend: { position: "top" },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -764,6 +765,62 @@ document.addEventListener("DOMContentLoaded", function() {
                                 callback: function(value) {
                                     return "$" + value;
                                 }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        if (chartType === "incomePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: incomeCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Income Categories",
+                            data: incomeCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        if (chartType === "expensePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: expenseCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Expense Categories",
+                            data: expenseCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
                             }
                         }
                     }
@@ -797,13 +854,9 @@ document.addEventListener("DOMContentLoaded", function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: {
-                    duration: 800
-                },
+                animation: { duration: 800 },
                 plugins: {
-                    legend: {
-                        position: "top"
-                    },
+                    legend: { position: "top" },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -827,16 +880,22 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function renderChart(chartType) {
-        if (currentChart) {
-            currentChart.destroy();
-        }
+        if (currentChart) currentChart.destroy();
         currentChart = new Chart(ctx, buildChartConfig(chartType));
     }
 
-    renderChart("bar");
+    const transactionChartStorageKey = "transactionChartType";
+    const savedTransactionChartType = localStorage.getItem(transactionChartStorageKey) || "bar";
+
+    if (chartTypeSelect) {
+        chartTypeSelect.value = savedTransactionChartType;
+    }
+
+    renderChart(savedTransactionChartType);
 
     if (chartTypeSelect) {
         chartTypeSelect.addEventListener("change", function () {
+            localStorage.setItem(transactionChartStorageKey, chartTypeSelect.value);
             renderChart(chartTypeSelect.value);
         });
     }
