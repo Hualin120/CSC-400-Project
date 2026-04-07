@@ -284,9 +284,13 @@
             <div style="margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
                 <p style="margin: 0 0 5px 0; font-weight: bold;">📋 Format Example:</p>
                 <code style="font-size: 12px;">
-                    Date,Type,Category,Description,Amount<br>
-                    03/30/2026,Income,salary,Monthly salary,5000<br>
-                    04/01/2026,Expense,food,Lunch,15.5
+                    Date, Type, Category, Description, Amount<br>
+                    03/30/2026, Income, Salary, Monthly salary, 512.71<br>
+                    04/01/2026, Expense, Food, Lunch, 15.5<br><br>
+                    (Accepts lowercase)<br>
+                    date, type, category, description, amount<br>
+                    04/03/2026, expense, entertainment, game credits, 31.91<br>
+                    04/04/2026, income, refund, amazon, 35.87
                 </code>
                 <div style="margin-top: 8px;">
                     <a href="{{ url_for('csv.download_template') }}" style="color: #2563eb;">Download CSV Template</a>
@@ -408,18 +412,30 @@ function updateCategoryOptions() {
     // identifiy income and expense type
     const incomeCategories = [
         { value: 'salary', label: 'Salary' },
-        { value: 'bonus', label: 'Bonus' },
         { value: 'part_time', label: 'Part Time' },
+        { value: 'freelance', label: 'Freelance' },
+        { value: 'allowance', label: 'Allowance' },
+        { value: 'refund', label: 'Refund' },
+        { value: 'gift', label: 'Gift' },                
         { value: 'other', label: 'Other' }
     ];
-    
+
     const expenseCategories = [
-        { value: 'food', label: 'Food' },
+        { value: 'housing', label: 'Housing' },
+        { value: 'utilities', label: 'Utilities' },
+        { value: 'groceries', label: 'Groceries' },
+        { value: 'Food', label: 'Food' },     
+        { value: 'transportation', label: 'Transportation' },
+        { value: 'insurance', label: 'Insurance' },
+        { value: 'subscriptions', label: 'Subscriptions' },
         { value: 'entertainment', label: 'Entertainment' },
         { value: 'shopping', label: 'Shopping' },
-        { value: 'other', label: 'Other' }
+        { value: 'medical', label: 'Medical' },
+        { value: 'travel', label: 'Travel' },
+        { value: 'other', label: 'Other' }        
     ];
     
+
     const categories = selectedType === 'income' ? incomeCategories : expenseCategories;
     
     categorySelect.innerHTML = '';
