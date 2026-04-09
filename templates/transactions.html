@@ -526,7 +526,6 @@ document.getElementById('createBookModal').addEventListener('click', function(e)
 });
 
 
-
 function selectAll(select) {
     const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
     checkboxes.forEach(cb => cb.checked = select);
@@ -537,6 +536,7 @@ document.getElementById('exportModal').addEventListener('click', function(e) {
         closeModal();
     }
 });
+
 
 function updateCategoryOptions() {
     const typeSelect = document.querySelector('select[name="type"]');
