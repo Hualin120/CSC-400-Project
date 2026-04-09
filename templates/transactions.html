@@ -27,9 +27,9 @@
         </div>
 
         <div class="col-lg-6 text-lg-end">
-            <a href="{{ url_for('create_account_book') }}" class="btn btn-outline-primary">
+            <button type="button" onclick="openCreateBookModal()" class="btn btn-outline-primary">
                 + Create a New Account Book
-            </a>
+            </button>
         </div>
 
         <div class="col-12 d-flex flex-wrap align-items-center gap-2">
@@ -462,6 +462,31 @@
     </div>
 </div>
 
+
+<!-- create account book -->
+<div id="createBookModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: relative; width: 90%; max-width: 400px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">📓 Create New Account Book</h3>
+            <button onclick="closeCreateBookModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('create_account_book') }}" id="createBookForm">
+            <div style="margin-bottom: 20px;">
+                <label><strong>Book Name:</strong></label>
+                <input type="text" name="book_name" class="form-control" placeholder="e.g., Personal, Travel, Work" required style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeCreateBookModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
 <script>
 function openModal() {
     document.getElementById('exportModal').style.display = 'block';
@@ -484,6 +509,23 @@ document.getElementById('importModal').addEventListener('click', function(e) {
         closeImportModal();
     }
 });
+
+
+function openCreateBookModal() {
+    document.getElementById('createBookModal').style.display = 'block';
+}
+
+function closeCreateBookModal() {
+    document.getElementById('createBookModal').style.display = 'none';
+}
+
+document.getElementById('createBookModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCreateBookModal();
+    }
+});
+
+
 
 function selectAll(select) {
     const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');

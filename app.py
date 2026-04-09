@@ -121,7 +121,7 @@ def register():
         user_profile = UserProfile(user_id=user.id)
         db.session.add(user_profile)
         db.session.commit()
-        
+
 
         default_book = AccountBook(
             bookname = 'General',
@@ -667,37 +667,30 @@ def delete_transaction(type, id):
     return redirect(url_for('transactions'))
 
 
-@app.route('/create_account_book', methods=['GET', 'POST'])
+@app.route('/create_account_book', methods=['POST'])
 @login_required
 def create_account_book():
-    if request.method == 'GET':
-        return render_template('create_account_book.html')
-
-    if request.method == 'POST':
-        book_name = request.form.get('book_name', '').strip()
-
-        if not book_name:
-            flash('Account book name cannot be empty', 'danger')
-            return redirect(url_for('create_account_book'))
-
-        new_book = AccountBook(
-            bookname=book_name,
-            user_id=current_user.id
-        )
-
-        try:
-            db.session.add(new_book)
-            db.session.commit()
-
-            session['current_account_book'] = new_book.id
-
-            flash(f'Account book "{book_name}" created successfully!', 'success')
-            return redirect(url_for('transactions'))
-
-        except Exception as e:
-            db.session.rollback()
-            flash('An error occurred while creating account book. Please try again.', 'danger')
-            return redirect(url_for('create_account_book'))
+    book_name = request.form.get('book_name', '').strip()
+    
+    if not book_name:
+        flash('Account book name cannot be empty', 'danger')
+        return redirect(url_for('transactions'))
+    
+    new_book = AccountBook(
+        bookname=book_name,
+        user_id=current_user.id
+    )
+    
+    try:
+        db.session.add(new_book)
+        db.session.commit()
+        session['current_account_book'] = new_book.id
+        flash(f'Account book "{book_name}" created successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while creating account book. Please try again.', 'danger')
+    
+    return redirect(url_for('transactions'))
 
 
 @app.route('/switch_account_book/<int:book_id>')
