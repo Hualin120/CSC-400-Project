@@ -409,3 +409,19 @@ p {
 .month-checkbox-item input {
     cursor: pointer;
 }
+
+.avatar-img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #2563eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-section {
+    text-align: center;
+    margin: 20px 0;
+}
+
+}

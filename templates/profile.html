@@ -2,18 +2,62 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<div class="profileinfo">
-  <h2> {{ user.username }}'s Profile</h2>
-  <p>Username: {{ user.username }}</p>
-  <p>Email: {{ user.email }}</p>
+<div class="container">
+  
+    <div class="app-card p-4 mb-4">
+        <div class="avatar-section">
+            <img src="{{ url_for('avatar', user_id=user.id) }}" alt="Avatar" class="avatar-img">
+        </div>
+    </div>
+    
+    <div class="app-card p-4 mb-4">
+        <h2 class="h4 mb-3">{{ user.username }}'s Profile</h2>
+        
+        <div id="displayMode">
+            <p><strong>First Name:</strong> {{ profile.first_name or 'Not set' }}</p>
+            <p><strong>Middle Name:</strong> {{ profile.middle_name or 'Not set' }}</p>
+            <p><strong>Last Name:</strong> {{ profile.last_name or 'Not set' }}</p>
+            <button onclick="enterEditMode()" class="btn btn-primary">Edit Profile</button>
+        </div>
+        
+        <!-- edit form -->
+        <form method="POST" action="{{ url_for('edit_profile') }}" enctype="multipart/form-data" id="editForm" style="display: none;">
+            <div class="mb-3">
+                <label class="form-label"><strong>First Name:</strong></label>
+                <input type="text" name="first_name" class="form-control" value="{{ profile.first_name or '' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label"><strong>Middle Name:</strong></label>
+                <input type="text" name="middle_name" class="form-control" value="{{ profile.middle_name or '' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label"><strong>Last Name:</strong></label>
+                <input type="text" name="last_name" class="form-control" value="{{ profile.last_name or '' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label"><strong>Avatar:</strong></label>
+                <input type="file" name="avatar" class="form-control" accept="image/png, image/jpeg, image/jpg, image/gif">
+            </div>
+            
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" onclick="cancelEdit()" class="btn btn-secondary">Cancel</button>
+        </form>
+    </div>
 </div>
-<div class="change">
-  <form action="/upload-profile-picture" method="post" enctype="multipart/form-data">
-  <label for="profile_picture"> Change your picture? </label>
-  <br>
-  <input type="file" id="profile_picture" name="profile_picture" accept="image/png, image/jpeg, image/jpg">
-  <br>
-  <button type="submit">Upload Image</button>
-</form>
-</div>  
+
+<script>
+function enterEditMode() {
+    document.getElementById('displayMode').style.display = 'none';
+    document.getElementById('editForm').style.display = 'block';
+}
+
+function cancelEdit() {
+    document.getElementById('displayMode').style.display = 'block';
+    document.getElementById('editForm').style.display = 'none';
+    document.getElementById('editForm').reset();
+}
+</script>
 {% endblock %}

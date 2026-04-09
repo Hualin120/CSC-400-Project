@@ -10,7 +10,7 @@ Just like an USB, you plug it in, and you could use it immediately. If even you 
 '''
 from flask import Blueprint, redirect, url_for, flash, session, current_app
 from flask_login import login_user
-from models import db, User, AccountBook
+from models import db, User, AccountBook, UserProfile
 import os
 from authlib.integrations.flask_client import OAuth
 from werkzeug.security import generate_password_hash
@@ -90,21 +90,16 @@ def authorize_google():
         user_info = google.parse_id_token(token, nonce=nonce)
 
         email = user_info.get('email')
-        
-        # generate username from email，or getting more infomation from user_info
-        name_from_google = user_info.get('name', '')
 
-        if name_from_google:
-            # use name from google as username
-            base_username = name_from_google
-        else:
-            # if didn't get it, use email prefix as username
-            base_username = email.split('@')[0]
+        given_name = user_info.get('given_name', '') 
+        family_name = user_info.get('family_name', '') 
+        full_name = user_info.get('name', '')
         
-        
-        username = generate_unique_username(base_username)
+        # generate username
+        name_from_google = given_name or full_name or email.split('@')[0]
+        username = generate_unique_username(name_from_google)
 
-        
+
         # check users are exist or not by email or oauth_id
         user = User.query.filter((User.email == email) | ((User.oauth_provider == 'google') & (User.oauth_id == user_info.get('sub')))).first()
         
@@ -126,6 +121,15 @@ def authorize_google():
             db.session.add(user)
             db.session.commit()
 
+            user_profile = UserProfile(
+                user_id=user.id,
+                first_name=given_name or None,
+                last_name=family_name or None
+            )
+            db.session.add(user_profile)
+            db.session.commit()      
+
+
             default_book = AccountBook(
                 bookname = 'General',
                 user_id = user.id,
@@ -139,6 +143,19 @@ def authorize_google():
 
 
             flash(f"Welcome {username}! Your account has been created.", "success")
+
+        else:
+
+            # users might already exists, but may be missing a UserProfile
+            profile = UserProfile.query.filter_by(user_id=user.id).first()
+            if not profile:
+                profile = UserProfile(
+                    user_id=user.id,
+                    first_name=given_name or None,
+                    last_name=family_name or None
+                )
+                db.session.add(profile)
+                db.session.commit()
         
         # login user
         login_user(user)

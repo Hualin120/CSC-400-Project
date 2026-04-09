@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, session
+from flask import Flask, render_template, redirect, url_for, flash, request, session, make_response, send_file
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -11,12 +11,13 @@ from forms import (
     ResetPasswordForm, TransactionForm
 )
 
-from models import db, User, EmailToken, sha256, AccountBook, Income, Expense
+from models import db, User, EmailToken, sha256, AccountBook, Income, Expense, UserProfile
 from email_utils import send_email
 from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
 from auth_routes import auth_bp
 from csv_routes import csv_bp
 from collections import OrderedDict
+from io import BytesIO
 
 load_dotenv(override=True)
 print("MAILJET_API_KEY loaded?", bool(os.getenv("MAILJET_API_KEY")))
@@ -115,6 +116,12 @@ def register():
         user = User(username=username, email=email, password=hashed)
         db.session.add(user)
         db.session.commit()
+
+
+        user_profile = UserProfile(user_id=user.id)
+        db.session.add(user_profile)
+        db.session.commit()
+        
 
         default_book = AccountBook(
             bookname = 'General',
@@ -755,8 +762,50 @@ def settings():
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html', user=current_user)
+    user_profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+    return render_template('profile.html', user=current_user, profile=user_profile)
 
+@app.route('/avatar/<int:user_id>')
+def avatar(user_id):
+    # query users' avater 
+    profile = UserProfile.query.filter_by(user_id=user_id).first()
+    
+    if not profile or not profile.avatar:
+        # no avatar; return default image.
+        return send_file('static/default_avatar.png', mimetype='image/png')
+    
+    return make_response(profile.avatar, 200, {'Content-Type': profile.avatar_mime_type})
+
+
+
+@app.route('/edit_profile', methods=['POST'])
+@login_required
+def edit_profile():
+    profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+    if not profile:
+        profile = UserProfile(user_id=current_user.id)
+        db.session.add(profile)
+    
+    # update basic information
+    profile.first_name = request.form.get('first_name', '').strip() or None
+    profile.middle_name = request.form.get('middle_name', '').strip() or None
+    profile.last_name = request.form.get('last_name', '').strip() or None
+    
+    # handling avatar
+    avatar_file = request.files.get('avatar')
+    if avatar_file and avatar_file.filename:
+        allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif']
+        if avatar_file.mimetype not in allowed_types:
+            flash('Only PNG, JPEG, and GIF images are allowed.', 'danger')
+            return redirect(url_for('profile'))
+        
+        profile.avatar = avatar_file.read()
+        profile.avatar_mime_type = avatar_file.mimetype
+    
+    db.session.commit()
+    
+    flash('Profile updated successfully!', 'success')
+    return redirect(url_for('profile'))
 
 if __name__ == '__main__':
     with app.app_context():

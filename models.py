@@ -104,3 +104,18 @@ class Expense(db.Model):
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     account_book_id = db.Column(db.Integer, db.ForeignKey('account_books.id'), nullable=False)
+
+
+class UserProfile(db.Model):
+    __tablename__ = 'user_profile'
+
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(20), nullable=True)
+    middle_name = db.Column(db.String(20), nullable=True)
+    last_name = db.Column(db.String(20), nullable=True)
+    avatar = db.Column(db.LargeBinary)
+    avatar_mime_type = db.Column(db.String(50))
+
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+
