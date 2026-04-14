@@ -1,51 +1,27 @@
-{% extends "auth_base.html" %}
+{% extends "base.html" %}
+{% block title %}Create Your Account{% endblock %}
 
-{% block title %}Register | SpendSense{% endblock %}
+{% block content %}
+  <h2>Register</h2>
 
-{% block auth_content %}
-    <h1 class="auth-logo">SpendSense</h1>
-    <p class="auth-subtitle">Create your account</p>
+  <form method="POST">
+    {{ form.hidden_tag() }}
 
-    <form method="POST">
-        {{ form.hidden_tag() }}
+    <p>
+      {{ form.username.label }}<br>
+      {{ form.username() }}
+    </p>
 
-        <div class="form-group">
-            {{ form.username.label }}
-            {{ form.username(class="form-control", placeholder="Choose a username") }}
-            {% for error in form.username.errors %}
-                <div class="field-error">{{ error }}</div>
-            {% endfor %}
-        </div>
+    <p>
+      {{ form.email.label }}<br>
+      {{ form.email() }}
+    </p>
 
-        <div class="form-group">
-            {{ form.email.label }}
-            {{ form.email(class="form-control", placeholder="Enter your email") }}
-            {% for error in form.email.errors %}
-                <div class="field-error">{{ error }}</div>
-            {% endfor %}
-        </div>
+    <p>
+      {{ form.password.label }}<br>
+      {{ form.password() }}
+    </p>
 
-        <div class="form-group">
-            {{ form.password.label }}
-            {{ form.password(class="form-control", placeholder="Create a password") }}
-            {% for error in form.password.errors %}
-                <div class="field-error">{{ error }}</div>
-            {% endfor %}
-        </div>
-
-        <div class="form-group">
-            {{ form.confirm_password.label }}
-            {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
-            {% for error in form.confirm_password.errors %}
-                <div class="field-error">{{ error }}</div>
-            {% endfor %}
-        </div>
-
-        {{ form.submit(class="btn-primary") }}
-
-        <div class="auth-links">
-            <span>Already have an account?</span>
-            <a href="{{ url_for('login') }}">Login</a>
-        </div>
-    </form>
+    <button type="submit">Register</button>
+  </form>
 {% endblock %}
