@@ -4,6 +4,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
 from sqlalchemy import or_, extract
+
+import calendar
 from datetime import datetime, timedelta, date, time
 
 from forms import (
@@ -292,6 +294,10 @@ def reset_password(raw_token):
 
     return render_template("reset_password.html", form=form)
 
+import calendar
+from collections import OrderedDict
+from datetime import date
+from flask_login import login_required, current_user
 
 @app.route("/dashboard")
 @login_required
@@ -303,35 +309,21 @@ def dashboard():
     if selected_year == "all":
         selected_months = list(range(1, 13))
     elif selected_months:
-        selected_months = [int(month) for month in selected_months]
+        selected_months = [int(m) for m in selected_months]
     else:
         selected_months = list(range(1, 13))
 
     account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
-    account_book_ids = [book.id for book in account_books]
+    account_book_ids = [b.id for b in account_books]
 
-    all_user_incomes = []
-    all_user_expenses = []
+    all_incomes = []
+    all_expenses = []
 
     if account_book_ids:
-        all_user_incomes = (
-            Income.query
-            .filter(Income.account_book_id.in_(account_book_ids))
-            .all()
-        )
+        all_incomes = Income.query.filter(Income.account_book_id.in_(account_book_ids)).all()
+        all_expenses = Expense.query.filter(Expense.account_book_id.in_(account_book_ids)).all()
 
-        all_user_expenses = (
-            Expense.query
-            .filter(Expense.account_book_id.in_(account_book_ids))
-            .all()
-        )
-
-    transaction_years = [
-        transaction.date.year
-        for transaction in (all_user_incomes + all_user_expenses)
-        if transaction.date
-    ]
-
+    transaction_years = [t.date.year for t in (all_incomes + all_expenses) if t.date]
     earliest_year = min(transaction_years) if transaction_years else current_year
     year_options = list(range(earliest_year, current_year + 1))
 
@@ -344,27 +336,16 @@ def dashboard():
     else:
         selected_year_int = None
 
-    if selected_year != "all" and (selected_year_int < earliest_year or selected_year_int > current_year):
-        selected_year = str(current_year)
-        selected_year_int = current_year
-
-    filtered_incomes = []
-    filtered_expenses = []
-
-    for income in all_user_incomes:
+    def matches_filter(t):
         if selected_year == "all":
-            filtered_incomes.append(income)
-        elif income.date.year == selected_year_int and income.date.month in selected_months:
-            filtered_incomes.append(income)
+            return True
+        return t.date.year == selected_year_int and t.date.month in selected_months
 
-    for expense in all_user_expenses:
-        if selected_year == "all":
-            filtered_expenses.append(expense)
-        elif expense.date.year == selected_year_int and expense.date.month in selected_months:
-            filtered_expenses.append(expense)
+    filtered_incomes = [i for i in all_incomes if matches_filter(i)]
+    filtered_expenses = [e for e in all_expenses if matches_filter(e)]
 
-    total_income = sum(income.amount for income in filtered_incomes)
-    total_expense = sum(expense.amount for expense in filtered_expenses)
+    total_income = sum(i.amount for i in filtered_incomes)
+    total_expense = sum(e.amount for e in filtered_expenses)
     net_balance = total_income - total_expense
     number_of_account_books = len(account_books)
 
@@ -373,21 +354,11 @@ def dashboard():
 
     account_books_overview = []
     for book in account_books:
-        if selected_year == "all":
-            book_incomes = list(book.incomes)
-            book_expenses = list(book.expenses)
-        else:
-            book_incomes = [
-                income for income in book.incomes
-                if income.date.year == selected_year_int and income.date.month in selected_months
-            ]
-            book_expenses = [
-                expense for expense in book.expenses
-                if expense.date.year == selected_year_int and expense.date.month in selected_months
-            ]
+        book_incomes = [i for i in book.incomes if matches_filter(i)]
+        book_expenses = [e for e in book.expenses if matches_filter(e)]
 
-        book_total_income = sum(income.amount for income in book_incomes)
-        book_total_expense = sum(expense.amount for expense in book_expenses)
+        book_total_income = sum(i.amount for i in book_incomes)
+        book_total_expense = sum(e.amount for e in book_expenses)
         book_balance = book_total_income - book_total_expense
 
         account_books_overview.append({
@@ -406,38 +377,80 @@ def dashboard():
 
     chart_data = OrderedDict()
 
+    # All Years -> yearly chart
     if selected_year == "all":
         for year in range(earliest_year, current_year + 1):
             chart_data[str(year)] = {"income": 0, "expense": 0}
 
         for income in filtered_incomes:
-            label = str(income.date.year)
-            if label in chart_data:
-                chart_data[label]["income"] += float(income.amount)
+            chart_data[str(income.date.year)]["income"] += float(income.amount)
 
         for expense in filtered_expenses:
-            label = str(expense.date.year)
-            if label in chart_data:
-                chart_data[label]["expense"] += float(expense.amount)
+            chart_data[str(expense.date.year)]["expense"] += float(expense.amount)
 
-    else:
-        for month in sorted(selected_months):
-            label = f"{month_names[month]} {selected_year_int}"
-            chart_data[label] = {"income": 0, "expense": 0}
+    # One month -> date ranges inside the month
+    elif len(selected_months) == 1:
+        selected_month = selected_months[0]
+        month_label = month_names[selected_month]
+        last_day = calendar.monthrange(selected_year_int, selected_month)[1]
+
+        week_ranges = [(1, 7), (8, 14), (15, 21), (22, 28)]
+        if last_day >= 29:
+            week_ranges.append((29, last_day))
+
+        def make_range_label(start_day, end_day):
+            if start_day == end_day:
+                return f"{month_label} {start_day}"
+            return f"{month_label} {start_day}–{end_day}"
+
+        for start_day, end_day in week_ranges:
+            chart_data[make_range_label(start_day, end_day)] = {"income": 0, "expense": 0}
+
+        def get_range_label(day):
+            for start_day, end_day in week_ranges:
+                if start_day <= day <= end_day:
+                    return make_range_label(start_day, end_day)
+            return None
 
         for income in filtered_incomes:
-            label = f"{month_names[income.date.month]} {income.date.year}"
-            if label in chart_data:
+            label = get_range_label(income.date.day)
+            if label:
                 chart_data[label]["income"] += float(income.amount)
 
         for expense in filtered_expenses:
-            label = f"{month_names[expense.date.month]} {expense.date.year}"
-            if label in chart_data:
+            label = get_range_label(expense.date.day)
+            if label:
                 chart_data[label]["expense"] += float(expense.amount)
+
+    # Multiple months -> monthly chart
+    else:
+        for month in sorted(selected_months):
+            chart_data[f"{month_names[month]} {selected_year_int}"] = {"income": 0, "expense": 0}
+
+        for income in filtered_incomes:
+            key = f"{month_names[income.date.month]} {income.date.year}"
+            if key in chart_data:
+                chart_data[key]["income"] += float(income.amount)
+
+        for expense in filtered_expenses:
+            key = f"{month_names[expense.date.month]} {expense.date.year}"
+            if key in chart_data:
+                chart_data[key]["expense"] += float(expense.amount)
 
     chart_labels = list(chart_data.keys())
     chart_income_data = [chart_data[label]["income"] for label in chart_labels]
     chart_expense_data = [chart_data[label]["expense"] for label in chart_labels]
+
+    # PIE CHART DATA = CATEGORY COUNTS
+    income_category_counts = OrderedDict()
+    for income in filtered_incomes:
+        category = income.category or "Other"
+        income_category_counts[category] = income_category_counts.get(category, 0) + 1
+
+    expense_category_counts = OrderedDict()
+    for expense in filtered_expenses:
+        category = expense.category or "Other"
+        expense_category_counts[category] = expense_category_counts.get(category, 0) + 1
 
     return render_template(
         "dashboard.html",
@@ -453,7 +466,11 @@ def dashboard():
         year_options=year_options,
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
-        chart_expense_data=chart_expense_data
+        chart_expense_data=chart_expense_data,
+        income_category_labels=list(income_category_counts.keys()),
+        income_category_data=list(income_category_counts.values()),
+        expense_category_labels=list(expense_category_counts.keys()),
+        expense_category_data=list(expense_category_counts.values())
     )
 
 @app.route("/transactions", methods=["GET"])
@@ -472,12 +489,7 @@ def transactions():
 
     current_book = AccountBook.query.get(current_book_id)
 
-    all_incomes = Income.query.filter_by(account_book_id=current_book_id).order_by(Income.date.desc()).all()
-    all_expenses = Expense.query.filter_by(account_book_id=current_book_id).order_by(Expense.date.desc()).all()
-
     current_year = date.today().year
-
-    # Transactions page default = all years
     selected_year = request.args.get("year", "all")
     selected_months = request.args.getlist("months")
 
@@ -488,9 +500,10 @@ def transactions():
     else:
         selected_months = list(range(1, 13))
 
-    transaction_years = [
-        t.date.year for t in (all_incomes + all_expenses) if t.date
-    ]
+    all_incomes = Income.query.filter_by(account_book_id=current_book_id).order_by(Income.date.desc()).all()
+    all_expenses = Expense.query.filter_by(account_book_id=current_book_id).order_by(Expense.date.desc()).all()
+
+    transaction_years = [t.date.year for t in (all_incomes + all_expenses) if t.date]
     earliest_year = min(transaction_years) if transaction_years else current_year
     year_options = list(range(earliest_year, current_year + 1))
 
@@ -504,17 +517,13 @@ def transactions():
     else:
         selected_year_int = None
 
-    filtered_incomes = [
-        income for income in all_incomes
-        if selected_year == "all"
-        or (income.date.year == selected_year_int and income.date.month in selected_months)
-    ]
+    def matches_filter(t):
+        if selected_year == "all":
+            return True
+        return t.date.year == selected_year_int and t.date.month in selected_months
 
-    filtered_expenses = [
-        expense for expense in all_expenses
-        if selected_year == "all"
-        or (expense.date.year == selected_year_int and expense.date.month in selected_months)
-    ]
+    filtered_incomes = [income for income in all_incomes if matches_filter(income)]
+    filtered_expenses = [expense for expense in all_expenses if matches_filter(expense)]
 
     total_income = sum(income.amount for income in filtered_incomes)
     total_expense = sum(expense.amount for expense in filtered_expenses)
@@ -528,6 +537,7 @@ def transactions():
 
     chart_data = OrderedDict()
 
+    # CASE 1: All Years selected -> chart by year
     if selected_year == "all":
         for year in range(earliest_year, current_year + 1):
             chart_data[str(year)] = {"income": 0, "expense": 0}
@@ -542,6 +552,50 @@ def transactions():
             if label in chart_data:
                 chart_data[label]["expense"] += float(expense.amount)
 
+    # CASE 2: exactly one month selected -> chart by date ranges within that month
+    elif len(selected_months) == 1:
+        selected_month = selected_months[0]
+        month_label = month_names[selected_month]
+        last_day = calendar.monthrange(selected_year_int, selected_month)[1]
+
+        week_ranges = [
+            (1, 7),
+            (8, 14),
+            (15, 21),
+            (22, 28)
+        ]
+
+        if last_day >= 29:
+            week_ranges.append((29, last_day))
+
+        def make_range_label(start_day, end_day):
+            if start_day == end_day:
+                return f"{month_label} {start_day}"
+            return f"{month_label} {start_day}–{end_day}"
+
+        for start_day, end_day in week_ranges:
+            label = make_range_label(start_day, end_day)
+            chart_data[label] = {"income": 0, "expense": 0}
+
+        def get_range_label(day):
+            for start_day, end_day in week_ranges:
+                if start_day <= day <= end_day:
+                    return make_range_label(start_day, end_day)
+            return None
+
+        for income in filtered_incomes:
+            if income.date.month == selected_month:
+                label = get_range_label(income.date.day)
+                if label:
+                    chart_data[label]["income"] += float(income.amount)
+
+        for expense in filtered_expenses:
+            if expense.date.month == selected_month:
+                label = get_range_label(expense.date.day)
+                if label:
+                    chart_data[label]["expense"] += float(expense.amount)
+
+    # CASE 3: multiple months selected in one year -> chart by month
     else:
         for month in sorted(selected_months):
             label = f"{month_names[month]} {selected_year_int}"
@@ -561,27 +615,41 @@ def transactions():
     chart_income_data = [chart_data[label]["income"] for label in chart_labels]
     chart_expense_data = [chart_data[label]["expense"] for label in chart_labels]
 
+    # PIE CHART DATA = CATEGORY COUNTS, NOT AMOUNTS
+    income_category_counts = OrderedDict()
+    for income in filtered_incomes:
+        category = income.category or "Other"
+        income_category_counts[category] = income_category_counts.get(category, 0) + 1
+
+    expense_category_counts = OrderedDict()
+    for expense in filtered_expenses:
+        category = expense.category or "Other"
+        expense_category_counts[category] = expense_category_counts.get(category, 0) + 1
+
     form = TransactionForm()
 
     return render_template(
         "transactions.html",
+        account_books=account_books,
+        current_book=current_book,
         incomes=filtered_incomes,
         expenses=filtered_expenses,
         total_income=total_income,
         total_expense=total_expense,
         balance=balance,
-        account_books=account_books,
-        current_book=current_book,
         form=form,
         today_date=date.today().strftime('%Y-%m-%d'),
-        selected_months=selected_months,
         selected_year=selected_year,
+        selected_months=selected_months,
         year_options=year_options,
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
-        chart_expense_data=chart_expense_data
+        chart_expense_data=chart_expense_data,
+        income_category_labels=list(income_category_counts.keys()),
+        income_category_data=list(income_category_counts.values()),
+        expense_category_labels=list(expense_category_counts.keys()),
+        expense_category_data=list(expense_category_counts.values())
     )
-
 
 @app.route('/add_transaction', methods=['POST'])
 @login_required

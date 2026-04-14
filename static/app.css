@@ -360,17 +360,35 @@ p {
 }
 
 .month-dropdown-toggle {
-    min-width: 190px;
+    min-width: 210px;
     text-align: left;
     background-color: #fff;
+    color: #212529;
+    border: 1px solid #ced4da;
+}
+
+.month-dropdown-toggle:hover,
+.month-dropdown-toggle:focus {
+    background-color: #fff;
+    color: #212529;
+    border-color: #86b7fe;
+    box-shadow: none;
+}
+
+.month-dropdown-toggle:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border-color: #ced4da;
+    cursor: not-allowed;
+    opacity: 1;
 }
 
 .month-dropdown-menu {
     position: absolute;
     top: calc(100% + 8px);
     left: 0;
-    z-index: 1000;
-    width: 220px;
+    z-index: 1050;
+    width: 240px;
     background: #fff;
     border: 1px solid #dbe3ea;
     border-radius: 12px;
@@ -408,6 +426,20 @@ p {
 
 .month-checkbox-item input {
     cursor: pointer;
+}
+
+.transaction-chart-title {
+    line-height: 1.1;
+}
+
+.transaction-chart-filters .form-select,
+.transaction-chart-filters .btn,
+.transaction-chart-filters .month-dropdown-toggle {
+    height: 42px;
+}
+
+.transaction-chart-filters .form-label {
+    white-space: nowrap;
 }
 
 .avatar-img {

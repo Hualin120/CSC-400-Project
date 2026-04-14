@@ -11,7 +11,6 @@
     </p>
 </div>
 
-<!-- Account Book Switcher -->
 <div class="app-card p-4 mb-4">
     <div class="row g-3 align-items-end">
         <div class="col-lg-6">
@@ -64,7 +63,6 @@
     </div>
 </div>
 
-<!-- Summary -->
 <div class="row g-4 mb-4">
     <div class="col-md-4">
         <div class="app-card p-4 h-100">
@@ -96,7 +94,6 @@
     </div>
 </div>
 
-<!-- Add Transaction Form -->
 <div class="app-card p-4 mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="h4 mb-0">Add New Transaction</h3>
@@ -145,15 +142,23 @@
     </form>
 </div>
 
-<!-- Chart + Filters -->
 <div class="row g-4 mb-4">
     <div class="col-12">
         <div class="app-card h-100 p-4">
-            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
-                <h4 class="mb-0">Account Book Overview</h4>
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-start gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <h4 class="mb-0 transaction-chart-title">Account Book Overview</h4>
 
-                <div class="text-lg-end">
-                    <form method="GET" action="{{ url_for('transactions') }}" class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 justify-content-lg-end">
+                    <select id="transactionChartType" class="form-select" style="max-width: 200px;">
+                        <option value="bar" selected>Bar Chart</option>
+                        <option value="line">Line Chart</option>
+                        <option value="incomePie">Income Categories</option>
+                        <option value="expensePie">Expense Categories</option>
+                    </select>
+                </div>
+
+                <div class="transaction-chart-filters text-xl-end">
+                    <form method="GET" action="{{ url_for('transactions') }}" class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 justify-content-xl-end">
 
                         <div class="d-flex align-items-center gap-2">
                             <label class="form-label mb-0 fw-semibold">Months</label>
@@ -163,9 +168,9 @@
                                     type="button"
                                     class="btn btn-outline-secondary month-dropdown-toggle"
                                     id="transactionMonthDropdownButton"
-                                    {% if selected_year == 'all' %}disabled{% endif %}
+                                    {% if selected_year|string == 'all' %}disabled{% endif %}
                                 >
-                                    {% if selected_year == 'all' %}
+                                    {% if selected_year|string == 'all' %}
                                         All Months
                                     {% elif selected_months|length == 12 %}
                                         All Months
@@ -216,8 +221,8 @@
                                 id="year"
                                 class="form-select"
                             >
-                                <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
-                                {% for y in year_options %}
+                                <option value="all" {% if selected_year|string == 'all' %}selected{% endif %}>All Years</option>
+                                {% for y in year_options|reverse %}
                                     <option value="{{ y }}" {% if y|string == selected_year|string %}selected{% endif %}>{{ y }}</option>
                                 {% endfor %}
                             </select>
@@ -230,21 +235,20 @@
 
                     <small class="text-muted d-block mt-2">
                         Showing:
-                        {% if selected_year == 'all' %}
+                        {% if selected_year|string == 'all' %}
                             All Years
+                        {% elif selected_months|length == 12 %}
+                            All Months {{ selected_year }}
                         {% else %}
-                            {% if selected_months|length == 12 %}
-                                All Months
-                            {% else %}
-                                {% for m in selected_months %}
-                                    {{ month_names[m - 1] }}{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                            — {{ selected_year }}
+                            {% for m in selected_months %}
+                                {{ month_names[m - 1] }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {{ selected_year }}
                         {% endif %}
                     </small>
                 </div>
             </div>
+                    
 
             {% if chart_labels %}
                 <div style="height: 320px;">
@@ -257,7 +261,6 @@
     </div>
 </div>
 
-<!-- Income and Expense Tables -->
 <div class="row g-4 mb-4">
     <div class="col-xl-6">
         <div class="app-card p-4 h-100">
@@ -358,7 +361,6 @@
     </div>
 </div>
 
-<!-- import CSV modal -->
 <div id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
     <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -406,7 +408,6 @@
     </div>
 </div>
 
-<!-- Export multiple account books modal -->
 <div id="exportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
     <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
 
@@ -461,6 +462,17 @@
         </form>
     </div>
 </div>
+
+<script id="book-chart-labels" type="application/json">{{ chart_labels | tojson }}</script>
+<script id="book-chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
+<script id="book-chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
+
+<script id="income-category-labels" type="application/json">{{ income_category_labels | tojson }}</script>
+<script id="income-category-data" type="application/json">{{ income_category_data | tojson }}</script>
+<script id="expense-category-labels" type="application/json">{{ expense_category_labels | tojson }}</script>
+<script id="expense-category-data" type="application/json">{{ expense_category_data | tojson }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
 <!-- create account book -->
@@ -582,37 +594,51 @@ function updateCategoryOptions() {
         categorySelect.appendChild(option);
     });
 }
-</script>
 
-<script id="book-chart-labels" type="application/json">{{ chart_labels | tojson }}</script>
-<script id="book-chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
-<script id="book-chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
+function setupMonthDropdown(config) {
+    var dropdownButton = document.getElementById(config.buttonId);
+    var dropdownMenu = document.getElementById(config.menuId);
+    var selectAllBtn = document.getElementById(config.selectAllId);
+    var clearAllBtn = document.getElementById(config.clearAllId);
+    var allMonthsCheckbox = document.getElementById(config.allCheckboxId);
+    var monthCheckboxes = document.querySelectorAll(config.monthCheckboxSelector);
+    var yearSelect = document.getElementById(config.yearSelectId);
+    var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const typeSelect = document.querySelector('select[name="type"]');
-    if (typeSelect) {
-        updateCategoryOptions();
-        typeSelect.addEventListener('change', updateCategoryOptions);
-    }
-
-    var dropdownButton = document.getElementById("transactionMonthDropdownButton");
-    var dropdownMenu = document.getElementById("transactionMonthDropdownMenu");
-    var selectAllBtn = document.getElementById("transactionSelectAllMonths");
-    var clearAllBtn = document.getElementById("transactionClearAllMonths");
-    var allMonthsCheckbox = document.getElementById("transactionAllMonthsCheckbox");
-    var monthCheckboxes = document.querySelectorAll(".transaction-month-checkbox");
-    var yearSelect = document.getElementById("year");
-
-    function syncAllCheckbox() {
+    function getCheckedCount() {
         var checkedCount = 0;
         monthCheckboxes.forEach(function (checkbox) {
-            if (checkbox.checked) {
-                checkedCount++;
-            }
+            if (checkbox.checked) checkedCount++;
         });
-        allMonthsCheckbox.checked = checkedCount === 12;
+        return checkedCount;
+    }
+
+    function syncAllCheckbox() {
+        if (allMonthsCheckbox) {
+            allMonthsCheckbox.checked = getCheckedCount() === 12;
+        }
+    }
+
+    function updateButtonText() {
+        if (!dropdownButton) return;
+
+        if (yearSelect && yearSelect.value === "all") {
+            dropdownButton.textContent = "All Months";
+            return;
+        }
+
+        var checked = [];
+        monthCheckboxes.forEach(function (checkbox) {
+            if (checkbox.checked) checked.push(parseInt(checkbox.value, 10));
+        });
+
+        if (checked.length === 12 || checked.length === 0) {
+            dropdownButton.textContent = "All Months";
+        } else if (checked.length === 1) {
+            dropdownButton.textContent = monthNames[checked[0] - 1];
+        } else {
+            dropdownButton.textContent = checked.length + " Months Selected";
+        }
     }
 
     if (dropdownButton && dropdownMenu) {
@@ -635,6 +661,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 checkbox.checked = true;
             });
             syncAllCheckbox();
+            updateButtonText();
         });
     }
 
@@ -644,6 +671,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 checkbox.checked = false;
             });
             syncAllCheckbox();
+            updateButtonText();
         });
     }
 
@@ -652,12 +680,14 @@ document.addEventListener("DOMContentLoaded", function() {
             monthCheckboxes.forEach(function (checkbox) {
                 checkbox.checked = allMonthsCheckbox.checked;
             });
+            updateButtonText();
         });
     }
 
     monthCheckboxes.forEach(function (checkbox) {
         checkbox.addEventListener("change", function () {
             syncAllCheckbox();
+            updateButtonText();
         });
     });
 
@@ -669,92 +699,249 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
                 syncAllCheckbox();
 
-                if (dropdownMenu) {
-                    dropdownMenu.classList.remove("show");
-                }
-
-                if (dropdownButton) {
-                    dropdownButton.disabled = true;
-                    dropdownButton.textContent = "All Months";
-                }
+                if (dropdownMenu) dropdownMenu.classList.remove("show");
+                if (dropdownButton) dropdownButton.disabled = true;
             } else {
-                if (dropdownButton) {
-                    dropdownButton.disabled = false;
-                }
+                if (dropdownButton) dropdownButton.disabled = false;
             }
+
+            updateButtonText();
         });
     }
 
     syncAllCheckbox();
+    updateButtonText();
+}
 
-    var labelsElement = document.getElementById("book-chart-labels");
-    var incomeElement = document.getElementById("book-chart-income-data");
-    var expenseElement = document.getElementById("book-chart-expense-data");
-    var canvas = document.getElementById("bookIncomeExpenseChart");
-
-    if (!labelsElement || !incomeElement || !expenseElement || !canvas) {
-        return;
+document.addEventListener("DOMContentLoaded", function() {
+    const typeSelect = document.querySelector('select[name="type"]');
+    if (typeSelect) {
+        updateCategoryOptions();
+        typeSelect.addEventListener('change', updateCategoryOptions);
     }
 
-    var labels = JSON.parse(labelsElement.textContent);
-    var incomeData = JSON.parse(incomeElement.textContent);
-    var expenseData = JSON.parse(expenseElement.textContent);
+    setupMonthDropdown({
+        buttonId: "transactionMonthDropdownButton",
+        menuId: "transactionMonthDropdownMenu",
+        selectAllId: "transactionSelectAllMonths",
+        clearAllId: "transactionClearAllMonths",
+        allCheckboxId: "transactionAllMonthsCheckbox",
+        monthCheckboxSelector: ".transaction-month-checkbox",
+        yearSelectId: "year"
+    });
+
+    var labels = JSON.parse(document.getElementById("book-chart-labels").textContent);
+    var incomeData = JSON.parse(document.getElementById("book-chart-income-data").textContent);
+    var expenseData = JSON.parse(document.getElementById("book-chart-expense-data").textContent);
+
+    var incomeCategoryLabels = JSON.parse(document.getElementById("income-category-labels").textContent);
+    var incomeCategoryData = JSON.parse(document.getElementById("income-category-data").textContent);
+    var expenseCategoryLabels = JSON.parse(document.getElementById("expense-category-labels").textContent);
+    var expenseCategoryData = JSON.parse(document.getElementById("expense-category-data").textContent);
+
+    var canvas = document.getElementById("bookIncomeExpenseChart");
+    var chartTypeSelect = document.getElementById("transactionChartType");
+
+    if (!canvas) return;
 
     var ctx = canvas.getContext("2d");
+    var currentChart;
 
-    new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: "Income",
-                    data: incomeData,
-                    backgroundColor: "rgba(34, 197, 94, 0.7)",
-                    borderColor: "rgba(34, 197, 94, 1)",
-                    borderWidth: 1,
-                    borderRadius: 6
+    function pieTooltipLabel(context) {
+        const data = context.dataset.data || [];
+        const total = data.reduce((sum, value) => sum + Number(value || 0), 0);
+        const value = Number(context.raw || 0);
+        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+        const word = value === 1 ? "transaction" : "transactions";
+        return `${context.label}: ${value} ${word} (${percent}%)`;
+    }
+
+    function buildChartConfig(chartType) {
+        if (chartType === "line") {
+            return {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Income",
+                            data: incomeData,
+                            borderColor: "rgba(34, 197, 94, 1)",
+                            backgroundColor: "rgba(34, 197, 94, 0.15)",
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: "Expenses",
+                            data: expenseData,
+                            borderColor: "rgba(239, 68, 68, 1)",
+                            backgroundColor: "rgba(239, 68, 68, 0.15)",
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
                 },
-                {
-                    label: "Expenses",
-                    data: expenseData,
-                    backgroundColor: "rgba(239, 68, 68, 0.7)",
-                    borderColor: "rgba(239, 68, 68, 1)",
-                    borderWidth: 1,
-                    borderRadius: 6
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 800
-            },
-            plugins: {
-                legend: {
-                    position: "top"
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return "$" + value;
+                                }
+                            }
                         }
                     }
                 }
+            };
+        }
+
+        if (chartType === "incomePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: incomeCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Income Categories",
+                            data: incomeCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        if (chartType === "expensePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: expenseCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Expense Categories",
+                            data: expenseCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        return {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: incomeData,
+                        backgroundColor: "rgba(34, 197, 94, 0.7)",
+                        borderColor: "rgba(34, 197, 94, 1)",
+                        borderWidth: 1,
+                        borderRadius: 6
+                    },
+                    {
+                        label: "Expenses",
+                        data: expenseData,
+                        backgroundColor: "rgba(239, 68, 68, 0.7)",
+                        borderColor: "rgba(239, 68, 68, 1)",
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }
+                ]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return "$" + value;
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 800 },
+                plugins: {
+                    legend: { position: "top" },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return "$" + value;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        };
+    }
+
+    function renderChart(chartType) {
+        if (currentChart) currentChart.destroy();
+        currentChart = new Chart(ctx, buildChartConfig(chartType));
+    }
+
+    const transactionChartStorageKey = "transactionChartType";
+    const savedTransactionChartType = localStorage.getItem(transactionChartStorageKey) || "bar";
+
+    if (chartTypeSelect) {
+        chartTypeSelect.value = savedTransactionChartType;
+    }
+
+    renderChart(savedTransactionChartType);
+
+    if (chartTypeSelect) {
+        chartTypeSelect.addEventListener("change", function () {
+            localStorage.setItem(transactionChartStorageKey, chartTypeSelect.value);
+            renderChart(chartTypeSelect.value);
+        });
+    }
 });
 </script>
 
