@@ -1,0 +1,948 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% set month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+
+<div class="mb-4">
+    <h1 class="fw-bold mb-2">Transactions</h1>
+    <p class="text-muted mb-0">
+        Manage your income and expenses for <strong>{{ current_book.bookname }}</strong>.
+    </p>
+</div>
+
+<div class="app-card p-4 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-lg-6">
+            <label for="accountBookSelect" class="form-label fw-semibold">Current Account Book</label>
+            <select id="accountBookSelect" class="form-select" onchange="location.href=this.value;">
+                {% for book in account_books %}
+                    <option value="{{ url_for('switch_account_book', book_id=book.id) }}"
+                            {% if current_book.id == book.id %}selected{% endif %}>
+                        {{ book.bookname }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-lg-6 text-lg-end">
+            <button type="button" onclick="openCreateBookModal()" class="btn btn-outline-primary">
+                + Create a New Account Book
+            </button>
+        </div>
+
+        <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+            {% if current_book.is_default %}
+                <button type="button" class="btn btn-outline-secondary" disabled
+                        title="Cannot delete your default account book">
+                    Cannot delete {{ current_book.bookname }}
+                </button>
+
+            {% elif account_books|length > 1 %}
+                <form method="POST"
+                      action="{{ url_for('delete_account_book', book_id=current_book.id) }}"
+                      onsubmit="return confirm('Are you sure you want to delete &quot;{{ current_book.bookname }}&quot;? All transactions will be permanently deleted.');">
+                    <button type="submit" class="btn btn-danger">
+                        Delete {{ current_book.bookname }}
+                    </button>
+                </form>
+            {% else %}
+                <button type="button" class="btn btn-outline-primary" disabled>
+                    Cannot delete last account book
+                </button>
+            {% endif %}
+
+            <button type="button" onclick="openImportModal()" class="btn btn-outline-primary">
+                Import CSV
+            </button>
+
+            <button type="button" onclick="openModal()" class="btn btn-outline-primary">
+                Export Multiple Books
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="app-card p-4 h-100">
+            <p class="text-muted mb-2">Total Income</p>
+            <h3 class="mb-0 text-success">${{ "%.2f"|format(total_income) }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="app-card p-4 h-100">
+            <p class="text-muted mb-2">Total Expense</p>
+            <h3 class="mb-0 text-danger">${{ "%.2f"|format(total_expense) }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="app-card p-4 h-100">
+            <p class="text-muted mb-2">Budget Balance</p>
+            <h3 class="mb-0 {% if balance > 0 %}text-success{% elif balance < 0 %}text-danger{% endif %}">
+                {% if balance > 0 %}
+                    +${{ "%.2f"|format(balance) }}
+                {% elif balance < 0 %}
+                    -${{ "%.2f"|format(balance|abs) }}
+                {% else %}
+                    $0.00
+                {% endif %}
+            </h3>
+        </div>
+    </div>
+</div>
+
+<div class="app-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h4 mb-0">Add New Transaction</h3>
+    </div>
+
+    <form method="POST" action="{{ url_for('add_transaction') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="row g-3">
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">{{ form.type.label.text }}</label>
+                {{ form.type(class="form-select") }}
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">{{ form.amount.label.text }}</label>
+                {{ form.amount(class="form-control", placeholder="Enter amount") }}
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">{{ form.category.label.text }}</label>
+                {{ form.category(class="form-control", placeholder="Enter category") }}
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">{{ form.description.label.text }}</label>
+                {{ form.description(class="form-control", placeholder="Enter description") }}
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">{{ form.date.label.text }}</label>
+                {{ form.date(
+                    class="form-control" + (" is-invalid" if form.date.errors else ""),
+                    type="date",
+                    max=today_date
+                ) }}
+                {% if form.date.errors %}
+                    <div class="field-error">{{ form.date.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <div class="col-12">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="app-card h-100 p-4">
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-start gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <h4 class="mb-0 transaction-chart-title">Account Book Overview</h4>
+
+                    <select id="transactionChartType" class="form-select" style="max-width: 200px;">
+                        <option value="bar" selected>Bar Chart</option>
+                        <option value="line">Line Chart</option>
+                        <option value="incomePie">Income Categories</option>
+                        <option value="expensePie">Expense Categories</option>
+                    </select>
+                </div>
+
+                <div class="transaction-chart-filters text-xl-end">
+                    <form method="GET" action="{{ url_for('transactions') }}" class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 justify-content-xl-end">
+
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 fw-semibold">Months</label>
+
+                            <div class="month-dropdown">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary month-dropdown-toggle"
+                                    id="transactionMonthDropdownButton"
+                                    {% if selected_year|string == 'all' %}disabled{% endif %}
+                                >
+                                    {% if selected_year|string == 'all' %}
+                                        All Months
+                                    {% elif selected_months|length == 12 %}
+                                        All Months
+                                    {% elif selected_months|length == 1 %}
+                                        {{ month_names[selected_months[0] - 1] }}
+                                    {% else %}
+                                        {{ selected_months|length }} Months Selected
+                                    {% endif %}
+                                </button>
+
+                                <div class="month-dropdown-menu" id="transactionMonthDropdownMenu">
+                                    <div class="month-dropdown-actions">
+                                        <button type="button" class="btn btn-sm btn-link p-0" id="transactionSelectAllMonths">Select All</button>
+                                        <button type="button" class="btn btn-sm btn-link p-0" id="transactionClearAllMonths">Clear</button>
+                                    </div>
+
+                                    <div class="month-checkbox-list">
+                                        <label class="month-checkbox-item" style="grid-column: 1 / -1; font-weight: 600;">
+                                            <input
+                                                type="checkbox"
+                                                id="transactionAllMonthsCheckbox"
+                                                {% if selected_months|length == 12 %}checked{% endif %}
+                                            >
+                                            <span>All</span>
+                                        </label>
+
+                                        {% for m in range(1, 13) %}
+                                            <label class="month-checkbox-item">
+                                                <input
+                                                    type="checkbox"
+                                                    name="months"
+                                                    value="{{ m }}"
+                                                    class="transaction-month-checkbox"
+                                                    {% if m in selected_months %}checked{% endif %}
+                                                >
+                                                <span>{{ month_names[m - 1] }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <label for="year" class="form-label mb-0 fw-semibold">Year</label>
+                            <select
+                                name="year"
+                                id="year"
+                                class="form-select"
+                            >
+                                <option value="all" {% if selected_year|string == 'all' %}selected{% endif %}>All Years</option>
+                                {% for y in year_options|reverse %}
+                                    <option value="{{ y }}" {% if y|string == selected_year|string %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Apply
+                        </button>
+                    </form>
+
+                    <small class="text-muted d-block mt-2">
+                        Showing:
+                        {% if selected_year|string == 'all' %}
+                            All Years
+                        {% elif selected_months|length == 12 %}
+                            All Months {{ selected_year }}
+                        {% else %}
+                            {% for m in selected_months %}
+                                {{ month_names[m - 1] }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {{ selected_year }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+                    
+
+            {% if chart_labels %}
+                <div style="height: 320px;">
+                    <canvas id="bookIncomeExpenseChart"></canvas>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No transaction data available for the selected period.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h4 mb-0">Income</h3>
+                <span class="green-badge">Total: ${{ "%.2f"|format(total_income) }}</span>
+            </div>
+
+            {% if incomes %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in incomes %}
+                            <tr>
+                                <td>{{ t.date.strftime('%m/%d/%Y') }}</td>
+                                <td>{{ t.category }}</td>
+                                <td>{{ t.description }}</td>
+                                <td class="fw-semibold text-success">${{ "%.2f"|format(t.amount) }}</td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('delete_transaction', type='income', id=t.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="fw-bold">Total Income</td>
+                                <td class="fw-bold text-success">${{ "%.2f"|format(total_income) }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No income in the selected period.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="app-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h4 mb-0">Expenses</h3>
+                <span class="green-badge">Total: ${{ "%.2f"|format(total_expense) }}</span>
+            </div>
+
+            {% if expenses %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in expenses %}
+                            <tr>
+                                <td>{{ t.date.strftime('%m/%d/%Y') }}</td>
+                                <td>{{ t.category }}</td>
+                                <td>{{ t.description }}</td>
+                                <td class="fw-semibold text-danger">${{ "%.2f"|format(t.amount) }}</td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('delete_transaction', type='expense', id=t.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="fw-bold">Total Expense</td>
+                                <td class="fw-bold text-danger">${{ "%.2f"|format(total_expense) }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No expenses in the selected period.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">📤 Import CSV</h3>
+            <button onclick="closeImportModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+
+        <form method="POST" action="{{ url_for('csv.import_csv') }}" enctype="multipart/form-data" id="importForm">
+            <div style="margin-bottom: 20px; padding: 10px; background: #f0f7ff; border-radius: 8px;">
+                <p style="margin: 0; color: #2563eb;">
+                    📓 Importing to: <strong>{{ current_book.bookname }}</strong>
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label><strong>CSV File:</strong></label>
+                <input type="file" name="csv_file" accept=".csv" required
+                       style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                <small style="color: #6c757d; display: block; margin-top: 5px;">
+                    File must be CSV format with columns: Date, Type, Category, Description, Amount
+                </small>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                <p style="margin: 0 0 5px 0; font-weight: bold;">📋 Format Example:</p>
+                <code style="font-size: 12px;">
+                    Date, Type, Category, Description, Amount<br>
+                    03/30/2026, Income, Part Time, Weekly salary, 512.71<br>
+                    04/01/2026, Expense, Food, Lunch, 15.5<br><br>
+                    (Accepts lowercase)<br>
+                    date, type, category, description, amount<br>
+                    04/03/2026, expense, entertainment, game credits, 31.91<br>
+                    04/04/2026, income, refund, amazon, 35.87
+                </code>
+                <div style="margin-top: 8px;">
+                    <a href="{{ url_for('csv.download_template') }}" style="color: #2563eb;">Download CSV Template</a>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeImportModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Import</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="exportModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: relative; width: 90%; max-width: 500px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">📚 Export Account Books</h3>
+            <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+
+        <form method="POST" action="{{ url_for('csv.export_multiple') }}" id="exportForm">
+
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <label><strong>Select Account Books:</strong></label>
+                    <div>
+                        <button type="button" onclick="selectAll(true)" style="background: none; border: none; color: #2563eb; cursor: pointer;">Select All</button>
+                        <button type="button" onclick="selectAll(false)" style="background: none; border: none; color: #6c757d; cursor: pointer;">Deselect All</button>
+                    </div>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    {% for book in account_books %}
+                    <div style="margin-bottom: 12px;">
+                        <input type="checkbox" name="book_ids" value="{{ book.id }}" id="book_{{ book.id }}">
+                        <label for="book_{{ book.id }}" style="margin-left: 8px;">
+                            <strong>{{ book.bookname }}</strong>
+                            <span style="color: #6c757d; font-size: 12px;">
+                                ({{ book.incomes|length + book.expenses|length }} transactions)
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label><strong>Export Format:</strong></label>
+                <div style="margin-top: 10px;">
+                    <div style="margin-bottom: 10px;">
+                        <input type="radio" name="export_format" value="single" id="format_single" checked>
+                        <label for="format_single">📄 Single CSV File (all books combined)</label>
+                    </div>
+                    <div>
+                        <input type="radio" name="export_format" value="separate" id="format_separate">
+                        <label for="format_separate">🗜️ ZIP Archive (each book as separate CSV)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Export</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="book-chart-labels" type="application/json">{{ chart_labels | tojson }}</script>
+<script id="book-chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
+<script id="book-chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
+
+<script id="income-category-labels" type="application/json">{{ income_category_labels | tojson }}</script>
+<script id="income-category-data" type="application/json">{{ income_category_data | tojson }}</script>
+<script id="expense-category-labels" type="application/json">{{ expense_category_labels | tojson }}</script>
+<script id="expense-category-data" type="application/json">{{ expense_category_data | tojson }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<!-- create account book -->
+<div id="createBookModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: relative; width: 90%; max-width: 400px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">📓 Create New Account Book</h3>
+            <button onclick="closeCreateBookModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('create_account_book') }}" id="createBookForm">
+            <div style="margin-bottom: 20px;">
+                <label><strong>Book Name:</strong></label>
+                <input type="text" name="book_name" class="form-control" placeholder="e.g., Personal, Travel, Work" required style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeCreateBookModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<script>
+function openModal() {
+    document.getElementById('exportModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('exportModal').style.display = 'none';
+}
+
+function openImportModal() {
+    document.getElementById('importModal').style.display = 'block';
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+document.getElementById('importModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImportModal();
+    }
+});
+
+
+function openCreateBookModal() {
+    document.getElementById('createBookModal').style.display = 'block';
+}
+
+function closeCreateBookModal() {
+    document.getElementById('createBookModal').style.display = 'none';
+}
+
+document.getElementById('createBookModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCreateBookModal();
+    }
+});
+
+
+function selectAll(select) {
+    const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
+    checkboxes.forEach(cb => cb.checked = select);
+}
+
+document.getElementById('exportModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+
+function updateCategoryOptions() {
+    const typeSelect = document.querySelector('select[name="type"]');
+    const categorySelect = document.querySelector('select[name="category"]');
+
+    if (!typeSelect || !categorySelect) return;
+
+    const selectedType = typeSelect.value;
+
+    const incomeCategories = [
+        { value: 'Salary', label: 'Salary' },
+        { value: 'Part Time', label: 'Part Time' },
+        { value: 'Freelance', label: 'Freelance' },
+        { value: 'Allowance', label: 'Allowance' },
+        { value: 'Refund', label: 'Refund' },
+        { value: 'Gift', label: 'Gift' },
+        { value: 'Other', label: 'Other' }
+    ];
+
+    const expenseCategories = [
+        { value: 'Housing', label: 'Housing' },
+        { value: 'Utilities', label: 'Utilities' },
+        { value: 'Groceries', label: 'Groceries' },
+        { value: 'Food', label: 'Food' },
+        { value: 'Transportation', label: 'Transportation' },
+        { value: 'Insurance', label: 'Insurance' },
+        { value: 'Subscriptions', label: 'Subscriptions' },
+        { value: 'Entertainment', label: 'Entertainment' },
+        { value: 'Shopping', label: 'Shopping' },
+        { value: 'Medical', label: 'Medical' },
+        { value: 'Travel', label: 'Travel' },
+        { value: 'Other', label: 'Other' }
+    ];
+
+    const categories = selectedType === 'income' ? incomeCategories : expenseCategories;
+
+    categorySelect.innerHTML = '';
+
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.value;
+        option.textContent = cat.label;
+        categorySelect.appendChild(option);
+    });
+}
+
+function setupMonthDropdown(config) {
+    var dropdownButton = document.getElementById(config.buttonId);
+    var dropdownMenu = document.getElementById(config.menuId);
+    var selectAllBtn = document.getElementById(config.selectAllId);
+    var clearAllBtn = document.getElementById(config.clearAllId);
+    var allMonthsCheckbox = document.getElementById(config.allCheckboxId);
+    var monthCheckboxes = document.querySelectorAll(config.monthCheckboxSelector);
+    var yearSelect = document.getElementById(config.yearSelectId);
+    var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    function getCheckedCount() {
+        var checkedCount = 0;
+        monthCheckboxes.forEach(function (checkbox) {
+            if (checkbox.checked) checkedCount++;
+        });
+        return checkedCount;
+    }
+
+    function syncAllCheckbox() {
+        if (allMonthsCheckbox) {
+            allMonthsCheckbox.checked = getCheckedCount() === 12;
+        }
+    }
+
+    function updateButtonText() {
+        if (!dropdownButton) return;
+
+        if (yearSelect && yearSelect.value === "all") {
+            dropdownButton.textContent = "All Months";
+            return;
+        }
+
+        var checked = [];
+        monthCheckboxes.forEach(function (checkbox) {
+            if (checkbox.checked) checked.push(parseInt(checkbox.value, 10));
+        });
+
+        if (checked.length === 12 || checked.length === 0) {
+            dropdownButton.textContent = "All Months";
+        } else if (checked.length === 1) {
+            dropdownButton.textContent = monthNames[checked[0] - 1];
+        } else {
+            dropdownButton.textContent = checked.length + " Months Selected";
+        }
+    }
+
+    if (dropdownButton && dropdownMenu) {
+        dropdownButton.addEventListener("click", function (e) {
+            if (dropdownButton.disabled) return;
+            e.stopPropagation();
+            dropdownMenu.classList.toggle("show");
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!dropdownMenu.contains(e.target) && !dropdownButton.contains(e.target)) {
+                dropdownMenu.classList.remove("show");
+            }
+        });
+    }
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+            syncAllCheckbox();
+            updateButtonText();
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener("click", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+            syncAllCheckbox();
+            updateButtonText();
+        });
+    }
+
+    if (allMonthsCheckbox) {
+        allMonthsCheckbox.addEventListener("change", function () {
+            monthCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = allMonthsCheckbox.checked;
+            });
+            updateButtonText();
+        });
+    }
+
+    monthCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            syncAllCheckbox();
+            updateButtonText();
+        });
+    });
+
+    if (yearSelect) {
+        yearSelect.addEventListener("change", function () {
+            if (yearSelect.value === "all") {
+                monthCheckboxes.forEach(function (checkbox) {
+                    checkbox.checked = true;
+                });
+                syncAllCheckbox();
+
+                if (dropdownMenu) dropdownMenu.classList.remove("show");
+                if (dropdownButton) dropdownButton.disabled = true;
+            } else {
+                if (dropdownButton) dropdownButton.disabled = false;
+            }
+
+            updateButtonText();
+        });
+    }
+
+    syncAllCheckbox();
+    updateButtonText();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const typeSelect = document.querySelector('select[name="type"]');
+    if (typeSelect) {
+        updateCategoryOptions();
+        typeSelect.addEventListener('change', updateCategoryOptions);
+    }
+
+    setupMonthDropdown({
+        buttonId: "transactionMonthDropdownButton",
+        menuId: "transactionMonthDropdownMenu",
+        selectAllId: "transactionSelectAllMonths",
+        clearAllId: "transactionClearAllMonths",
+        allCheckboxId: "transactionAllMonthsCheckbox",
+        monthCheckboxSelector: ".transaction-month-checkbox",
+        yearSelectId: "year"
+    });
+
+    var labels = JSON.parse(document.getElementById("book-chart-labels").textContent);
+    var incomeData = JSON.parse(document.getElementById("book-chart-income-data").textContent);
+    var expenseData = JSON.parse(document.getElementById("book-chart-expense-data").textContent);
+
+    var incomeCategoryLabels = JSON.parse(document.getElementById("income-category-labels").textContent);
+    var incomeCategoryData = JSON.parse(document.getElementById("income-category-data").textContent);
+    var expenseCategoryLabels = JSON.parse(document.getElementById("expense-category-labels").textContent);
+    var expenseCategoryData = JSON.parse(document.getElementById("expense-category-data").textContent);
+
+    var canvas = document.getElementById("bookIncomeExpenseChart");
+    var chartTypeSelect = document.getElementById("transactionChartType");
+
+    if (!canvas) return;
+
+    var ctx = canvas.getContext("2d");
+    var currentChart;
+
+    function pieTooltipLabel(context) {
+        const data = context.dataset.data || [];
+        const total = data.reduce((sum, value) => sum + Number(value || 0), 0);
+        const value = Number(context.raw || 0);
+        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+        const word = value === 1 ? "transaction" : "transactions";
+        return `${context.label}: ${value} ${word} (${percent}%)`;
+    }
+
+    function buildChartConfig(chartType) {
+        if (chartType === "line") {
+            return {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Income",
+                            data: incomeData,
+                            borderColor: "rgba(34, 197, 94, 1)",
+                            backgroundColor: "rgba(34, 197, 94, 0.15)",
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: "Expenses",
+                            data: expenseData,
+                            borderColor: "rgba(239, 68, 68, 1)",
+                            backgroundColor: "rgba(239, 68, 68, 0.15)",
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return "$" + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        if (chartType === "incomePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: incomeCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Income Categories",
+                            data: incomeCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        if (chartType === "expensePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: expenseCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Expense Categories",
+                            data: expenseCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        return {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: incomeData,
+                        backgroundColor: "rgba(34, 197, 94, 0.7)",
+                        borderColor: "rgba(34, 197, 94, 1)",
+                        borderWidth: 1,
+                        borderRadius: 6
+                    },
+                    {
+                        label: "Expenses",
+                        data: expenseData,
+                        backgroundColor: "rgba(239, 68, 68, 0.7)",
+                        borderColor: "rgba(239, 68, 68, 1)",
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 800 },
+                plugins: {
+                    legend: { position: "top" },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return "$" + value;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    function renderChart(chartType) {
+        if (currentChart) currentChart.destroy();
+        currentChart = new Chart(ctx, buildChartConfig(chartType));
+    }
+
+    const transactionChartStorageKey = "transactionChartType";
+    const savedTransactionChartType = localStorage.getItem(transactionChartStorageKey) || "bar";
+
+    if (chartTypeSelect) {
+        chartTypeSelect.value = savedTransactionChartType;
+    }
+
+    renderChart(savedTransactionChartType);
+
+    if (chartTypeSelect) {
+        chartTypeSelect.addEventListener("change", function () {
+            localStorage.setItem(transactionChartStorageKey, chartTypeSelect.value);
+            renderChart(chartTypeSelect.value);
+        });
+    }
+});
+</script>
+
+{% endblock %}
