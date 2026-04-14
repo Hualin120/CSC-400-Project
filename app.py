@@ -809,11 +809,14 @@ def edit_profile():
         profile.middle_name = request.form.get('middle_name', '').strip() or None
         profile.last_name = request.form.get('last_name', '').strip() or None
 
+        profile.phone = request.form.get('phone', '').strip() or None
+
         profile.address = request.form.get('address', '').strip() or None
         profile.city = request.form.get('city', '').strip() or None
         profile.state = request.form.get('state', '').strip() or None
         profile.zip_code = request.form.get('zip_code', '').strip() or None
         profile.country = request.form.get('country', '').strip() or None
+        
 
         profile_updated = True
 
