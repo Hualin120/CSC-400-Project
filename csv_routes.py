@@ -11,7 +11,7 @@ csv_bp = Blueprint('csv', __name__)
 
 
 ALLOWED_CATEGORIES = {
-    'income': ['Salary', 'Part-Time', 'Freelance', 'Allowance', 'Refund', 'Gift', 'Other'],
+    'income': ['Salary', 'Part Time', 'Freelance', 'Allowance', 'Refund', 'Gift', 'Other'],
     'expense': ['Housing', 'Utilities', 'Groceries', 'Food', 'Transportation', 'Insurance', 'Subscriptions', 'Entertainment', 'Shopping', 'Medical', 'Travel', 'Other']
 }
 
@@ -32,14 +32,21 @@ def format_category(cat_str):
 
     # format category names: capitalize the first letter; the rest are lowercase
     cat_str = cat_str.strip()
-
     if not cat_str:
         return cat_str
     
-    if len(cat_str) > 1:
-        return cat_str[0].upper() + cat_str[1:].lower()
+    words = cat_str.split()
     
-    return cat_str.upper()
+    formatted_words = []
+    for word in words:
+        if len(word) > 1:
+            formatted_words.append(word[0].upper() + word[1:].lower())
+        elif len(word) == 1:
+            formatted_words.append(word.upper())
+        else:
+            formatted_words.append(word)
+    
+    return ' '.join(formatted_words)
 
 
 def validate_and_create_transaction(row, current_book_id):

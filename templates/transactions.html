@@ -26,9 +26,9 @@
         </div>
 
         <div class="col-lg-6 text-lg-end">
-            <a href="{{ url_for('create_account_book') }}" class="btn btn-outline-primary">
+            <button type="button" onclick="openCreateBookModal()" class="btn btn-outline-primary">
                 + Create a New Account Book
-            </a>
+            </button>
         </div>
 
         <div class="col-12 d-flex flex-wrap align-items-center gap-2">
@@ -388,7 +388,7 @@
                 <p style="margin: 0 0 5px 0; font-weight: bold;">📋 Format Example:</p>
                 <code style="font-size: 12px;">
                     Date, Type, Category, Description, Amount<br>
-                    03/30/2026, Income, Salary, Monthly salary, 512.71<br>
+                    03/30/2026, Income, Part Time, Weekly salary, 512.71<br>
                     04/01/2026, Expense, Food, Lunch, 15.5<br><br>
                     (Accepts lowercase)<br>
                     date, type, category, description, amount<br>
@@ -474,6 +474,31 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
+<!-- create account book -->
+<div id="createBookModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: relative; width: 90%; max-width: 400px; margin: 100px auto; background: white; border-radius: 12px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">📓 Create New Account Book</h3>
+            <button onclick="closeCreateBookModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('create_account_book') }}" id="createBookForm">
+            <div style="margin-bottom: 20px;">
+                <label><strong>Book Name:</strong></label>
+                <input type="text" name="book_name" class="form-control" placeholder="e.g., Personal, Travel, Work" required style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeCreateBookModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button type="submit" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
 <script>
 function openModal() {
     document.getElementById('exportModal').style.display = 'block';
@@ -497,6 +522,22 @@ document.getElementById('importModal').addEventListener('click', function(e) {
     }
 });
 
+
+function openCreateBookModal() {
+    document.getElementById('createBookModal').style.display = 'block';
+}
+
+function closeCreateBookModal() {
+    document.getElementById('createBookModal').style.display = 'none';
+}
+
+document.getElementById('createBookModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCreateBookModal();
+    }
+});
+
+
 function selectAll(select) {
     const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
     checkboxes.forEach(cb => cb.checked = select);
@@ -508,6 +549,7 @@ document.getElementById('exportModal').addEventListener('click', function(e) {
     }
 });
 
+
 function updateCategoryOptions() {
     const typeSelect = document.querySelector('select[name="type"]');
     const categorySelect = document.querySelector('select[name="category"]');
@@ -517,28 +559,28 @@ function updateCategoryOptions() {
     const selectedType = typeSelect.value;
 
     const incomeCategories = [
-        { value: 'salary', label: 'Salary' },
-        { value: 'part_time', label: 'Part Time' },
-        { value: 'freelance', label: 'Freelance' },
-        { value: 'allowance', label: 'Allowance' },
-        { value: 'refund', label: 'Refund' },
-        { value: 'gift', label: 'Gift' },
-        { value: 'other', label: 'Other' }
+        { value: 'Salary', label: 'Salary' },
+        { value: 'Part Time', label: 'Part Time' },
+        { value: 'Freelance', label: 'Freelance' },
+        { value: 'Allowance', label: 'Allowance' },
+        { value: 'Refund', label: 'Refund' },
+        { value: 'Gift', label: 'Gift' },
+        { value: 'Other', label: 'Other' }
     ];
 
     const expenseCategories = [
-        { value: 'housing', label: 'Housing' },
-        { value: 'utilities', label: 'Utilities' },
-        { value: 'groceries', label: 'Groceries' },
-        { value: 'food', label: 'Food' },
-        { value: 'transportation', label: 'Transportation' },
-        { value: 'insurance', label: 'Insurance' },
-        { value: 'subscriptions', label: 'Subscriptions' },
-        { value: 'entertainment', label: 'Entertainment' },
-        { value: 'shopping', label: 'Shopping' },
-        { value: 'medical', label: 'Medical' },
-        { value: 'travel', label: 'Travel' },
-        { value: 'other', label: 'Other' }
+        { value: 'Housing', label: 'Housing' },
+        { value: 'Utilities', label: 'Utilities' },
+        { value: 'Groceries', label: 'Groceries' },
+        { value: 'Food', label: 'Food' },
+        { value: 'Transportation', label: 'Transportation' },
+        { value: 'Insurance', label: 'Insurance' },
+        { value: 'Subscriptions', label: 'Subscriptions' },
+        { value: 'Entertainment', label: 'Entertainment' },
+        { value: 'Shopping', label: 'Shopping' },
+        { value: 'Medical', label: 'Medical' },
+        { value: 'Travel', label: 'Travel' },
+        { value: 'Other', label: 'Other' }
     ];
 
     const categories = selectedType === 'income' ? incomeCategories : expenseCategories;

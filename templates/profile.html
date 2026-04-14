@@ -2,18 +2,304 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<div class="profileinfo">
-  <h2> {{ user.username }}'s Profile</h2>
-  <p>Username: {{ user.username }}</p>
-  <p>Email: {{ user.email }}</p>
+<div class="container">
+  
+    <div class="app-card p-4 mb-4">
+        <div class="avatar-section">
+            
+            <div onclick="triggerAvatarUpload()" style="cursor: pointer; position: relative;">
+                <img src="{{ url_for('avatar', user_id=user.id) }}" alt="Avatar" class="avatar-img" id="userAvatar">
+                <div class="avatar-overlay">
+                    <span>📷 Change</span>
+                </div>
+            </div>
+            
+            <input type="file" id="avatarInput" accept="image/png, image/jpeg, image/jpg, image/gif" style="display: none;">
+        </div>
+    </div>
+    
+    <div class="app-card p-4 mb-4">
+        <h2 class="h4 mb-3">{{ user.username }}'s Profile</h2>
+        
+            <div id="displayMode">
+
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">Email</small>
+                            <p class="mb-0 fw-semibold">{{ user.email }}</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">Username</small>
+                            <p class="mb-0 fw-semibold">{{ user.username }}</p>
+                        </div>
+                    </div>
+
+                </div>
+                
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">First Name</small>
+                            <p class="mb-0 fw-semibold">{{ profile.first_name or 'Not set' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">Middle Name</small>
+                            <p class="mb-0 fw-semibold">{{ profile.middle_name or 'Not set' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">Last Name</small>
+                            <p class="mb-0 fw-semibold">{{ profile.last_name or 'Not set' }}</p>
+                        </div>
+                    </div>
+
+                </div>
+                
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">Address</small>
+                            <p class="mb-0 fw-semibold">{{ profile.address or 'Not set' }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">City</small>
+                            <p class="mb-0 fw-semibold">{{ profile.city or 'Not set' }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">State</small>
+                            <p class="mb-0 fw-semibold">{{ profile.state or 'Not set' }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">ZIP Code</small>
+                            <p class="mb-0 fw-semibold">{{ profile.zip_code or 'Not set' }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">Country</small>
+                            <p class="mb-0 fw-semibold">{{ profile.country or 'Not set' }}</p>
+                        </div>
+                    </div>
+                </div>
+        
+        <button onclick="enterEditMode()" class="btn btn-primary">Edit Profile</button>
+    </div>
+        
+        <!-- edit form -->
+        <form method="POST" action="{{ url_for('edit_profile') }}" enctype="multipart/form-data" id="editForm" style="display: none;">
+            <div class="mb-3">
+                <label class="form-label"><strong>First Name:</strong></label>
+                <input type="text" name="first_name" class="form-control" value="{{ profile.first_name or '' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label"><strong>Middle Name:</strong></label>
+                <input type="text" name="middle_name" class="form-control" value="{{ profile.middle_name or '' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label"><strong>Last Name:</strong></label>
+                <input type="text" name="last_name" class="form-control" value="{{ profile.last_name or '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Address:</label>
+                <input type="text" name="address" class="form-control" value="{{ profile.address or '' }}">
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">City:</label>
+                    <input type="text" name="city" class="form-control" value="{{ profile.city or '' }}">
+                </div>
+
+            <div class="col-md-3 mb-3">
+                <label class="form-label">State:</label>
+                <select name="state" class="form-select">
+                    <option value="">Select State</option>
+                    <option value="AL" {% if profile.state == 'AL' %}selected{% endif %}>Alabama</option>
+                    <option value="AK" {% if profile.state == 'AK' %}selected{% endif %}>Alaska</option>
+                    <option value="AZ" {% if profile.state == 'AZ' %}selected{% endif %}>Arizona</option>
+                    <option value="AR" {% if profile.state == 'AR' %}selected{% endif %}>Arkansas</option>
+                    <option value="CA" {% if profile.state == 'CA' %}selected{% endif %}>California</option>
+                    <option value="CO" {% if profile.state == 'CO' %}selected{% endif %}>Colorado</option>
+                    <option value="CT" {% if profile.state == 'CT' %}selected{% endif %}>Connecticut</option>
+                    <option value="DE" {% if profile.state == 'DE' %}selected{% endif %}>Delaware</option>
+                    <option value="FL" {% if profile.state == 'FL' %}selected{% endif %}>Florida</option>
+                    <option value="GA" {% if profile.state == 'GA' %}selected{% endif %}>Georgia</option>
+                    <option value="HI" {% if profile.state == 'HI' %}selected{% endif %}>Hawaii</option>
+                    <option value="ID" {% if profile.state == 'ID' %}selected{% endif %}>Idaho</option>
+                    <option value="IL" {% if profile.state == 'IL' %}selected{% endif %}>Illinois</option>
+                    <option value="IN" {% if profile.state == 'IN' %}selected{% endif %}>Indiana</option>
+                    <option value="IA" {% if profile.state == 'IA' %}selected{% endif %}>Iowa</option>
+                    <option value="KS" {% if profile.state == 'KS' %}selected{% endif %}>Kansas</option>
+                    <option value="KY" {% if profile.state == 'KY' %}selected{% endif %}>Kentucky</option>
+                    <option value="LA" {% if profile.state == 'LA' %}selected{% endif %}>Louisiana</option>
+                    <option value="ME" {% if profile.state == 'ME' %}selected{% endif %}>Maine</option>
+                    <option value="MD" {% if profile.state == 'MD' %}selected{% endif %}>Maryland</option>
+                    <option value="MA" {% if profile.state == 'MA' %}selected{% endif %}>Massachusetts</option>
+                    <option value="MI" {% if profile.state == 'MI' %}selected{% endif %}>Michigan</option>
+                    <option value="MN" {% if profile.state == 'MN' %}selected{% endif %}>Minnesota</option>
+                    <option value="MS" {% if profile.state == 'MS' %}selected{% endif %}>Mississippi</option>
+                    <option value="MO" {% if profile.state == 'MO' %}selected{% endif %}>Missouri</option>
+                    <option value="MT" {% if profile.state == 'MT' %}selected{% endif %}>Montana</option>
+                    <option value="NE" {% if profile.state == 'NE' %}selected{% endif %}>Nebraska</option>
+                    <option value="NV" {% if profile.state == 'NV' %}selected{% endif %}>Nevada</option>
+                    <option value="NH" {% if profile.state == 'NH' %}selected{% endif %}>New Hampshire</option>
+                    <option value="NJ" {% if profile.state == 'NJ' %}selected{% endif %}>New Jersey</option>
+                    <option value="NM" {% if profile.state == 'NM' %}selected{% endif %}>New Mexico</option>
+                    <option value="NY" {% if profile.state == 'NY' %}selected{% endif %}>New York</option>
+                    <option value="NC" {% if profile.state == 'NC' %}selected{% endif %}>North Carolina</option>
+                    <option value="ND" {% if profile.state == 'ND' %}selected{% endif %}>North Dakota</option>
+                    <option value="OH" {% if profile.state == 'OH' %}selected{% endif %}>Ohio</option>
+                    <option value="OK" {% if profile.state == 'OK' %}selected{% endif %}>Oklahoma</option>
+                    <option value="OR" {% if profile.state == 'OR' %}selected{% endif %}>Oregon</option>
+                    <option value="PA" {% if profile.state == 'PA' %}selected{% endif %}>Pennsylvania</option>
+                    <option value="RI" {% if profile.state == 'RI' %}selected{% endif %}>Rhode Island</option>
+                    <option value="SC" {% if profile.state == 'SC' %}selected{% endif %}>South Carolina</option>
+                    <option value="SD" {% if profile.state == 'SD' %}selected{% endif %}>South Dakota</option>
+                    <option value="TN" {% if profile.state == 'TN' %}selected{% endif %}>Tennessee</option>
+                    <option value="TX" {% if profile.state == 'TX' %}selected{% endif %}>Texas</option>
+                    <option value="UT" {% if profile.state == 'UT' %}selected{% endif %}>Utah</option>
+                    <option value="VT" {% if profile.state == 'VT' %}selected{% endif %}>Vermont</option>
+                    <option value="VA" {% if profile.state == 'VA' %}selected{% endif %}>Virginia</option>
+                    <option value="WA" {% if profile.state == 'WA' %}selected{% endif %}>Washington</option>
+                    <option value="WV" {% if profile.state == 'WV' %}selected{% endif %}>West Virginia</option>
+                    <option value="WI" {% if profile.state == 'WI' %}selected{% endif %}>Wisconsin</option>
+                    <option value="WY" {% if profile.state == 'WY' %}selected{% endif %}>Wyoming</option>
+                </select>
+            </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">ZIP Code:</label>
+                    <input type="text" name="zip_code" class="form-control" value="{{ profile.zip_code or '' }}">
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Country:</label>
+                <select name="country" class="form-select">
+                    <option value="">Select Country</option>
+                    <option value="US" {% if profile.country == 'US' %}selected{% endif %}>United States</option>
+                    <option value="CA" {% if profile.country == 'CA' %}selected{% endif %}>Canada</option>
+                    <option value="UK" {% if profile.country == 'UK' %}selected{% endif %}>United Kingdom</option>
+                    <option value="AU" {% if profile.country == 'AU' %}selected{% endif %}>Australia</option>
+                    <option value="DE" {% if profile.country == 'DE' %}selected{% endif %}>Germany</option>
+                    <option value="FR" {% if profile.country == 'FR' %}selected{% endif %}>France</option>
+                    <option value="JP" {% if profile.country == 'JP' %}selected{% endif %}>Japan</option>
+                    <option value="CN" {% if profile.country == 'CN' %}selected{% endif %}>China</option>
+                    <option value="IN" {% if profile.country == 'IN' %}selected{% endif %}>India</option>
+                    <option value="BR" {% if profile.country == 'BR' %}selected{% endif %}>Brazil</option>
+                    <option value="MX" {% if profile.country == 'MX' %}selected{% endif %}>Mexico</option>
+                </select>
+            </div>
+                        
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" onclick="cancelEdit()" class="btn btn-secondary">Cancel</button>
+        </form>
+    </div>
 </div>
-<div class="change">
-  <form action="/upload-profile-picture" method="post" enctype="multipart/form-data">
-  <label for="profile_picture"> Change your picture? </label>
-  <br>
-  <input type="file" id="profile_picture" name="profile_picture" accept="image/png, image/jpeg, image/jpg">
-  <br>
-  <button type="submit">Upload Image</button>
-</form>
-</div>  
+
+<script>
+function enterEditMode() {
+    document.getElementById('displayMode').style.display = 'none';
+    document.getElementById('editForm').style.display = 'block';
+}
+
+function cancelEdit() {
+    document.getElementById('displayMode').style.display = 'block';
+    document.getElementById('editForm').style.display = 'none';
+    document.getElementById('editForm').reset();
+}
+
+
+
+
+
+function enterEditMode() {
+    document.getElementById('displayMode').style.display = 'none';
+    document.getElementById('editForm').style.display = 'block';
+}
+
+function cancelEdit() {
+    document.getElementById('displayMode').style.display = 'block';
+    document.getElementById('editForm').style.display = 'none';
+    document.getElementById('editForm').reset();
+}
+
+
+
+function triggerAvatarUpload() {
+    document.getElementById('avatarInput').click();
+}
+
+
+document.getElementById('avatarInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('Only PNG, JPEG, and GIF images are allowed.');
+        return;
+    }
+
+    
+    if (file.size > 2 * 1024 * 1024) {
+        alert('Image size must be less than 2MB.');
+        return;
+    }
+
+    
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    fetch('/edit_profile', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const avatarImg = document.getElementById('userAvatar');
+
+            avatarImg.src = avatarImg.src.split('?')[0] + '?' + new Date().getTime();
+
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        alert('Error uploading avatar');
+    });
+});
+</script>
 {% endblock %}

@@ -441,3 +441,45 @@ p {
 .transaction-chart-filters .form-label {
     white-space: nowrap;
 }
+
+.avatar-img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #2563eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-section {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+
+.avatar-section > div {
+    display: inline-block;
+    position: relative;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: white;
+    font-size: 14px;
+}
+
+.avatar-section > div:hover .avatar-overlay {
+    opacity: 1;
+}

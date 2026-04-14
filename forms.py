@@ -54,11 +54,11 @@ class TransactionForm(FlaskForm):
     
     category = SelectField('Category', choices=[
         # Income category
-        ('salary', 'Salary'), ('part_time', 'Part Time'), ('freelance', 'Freelance'), ('allowance', 'Allowance'), ('refund', 'Refund'), ('gift', 'Gift'),
+        ('Salary', 'Salary'), ('Part Time', 'Part Time'), ('Freelance', 'Freelance'), ('Allowance', 'Allowance'), ('Refund', 'Refund'), ('Gift', 'Gift'),
 
         # Expense category
-        ('housing', 'Housing'), ('utilities','Utilities'), ('groceries', 'Groceries'), ('food', 'Food'), ('transportation','Transportation'), ('insurance', 'Insurance'), 
-        ('subscriptions', 'Subscriptions'), ('entertainment', 'Entertainment'), ('shopping', 'Shopping'), ('medical', 'Medical'), ('travel', 'Travel'), ('other', 'Other')
+        ('Housing', 'Housing'), ('Utilities','Utilities'), ('Groceries', 'Groceries'), ('Food', 'Food'), ('Transportation','Transportation'), ('Insurance', 'Insurance'), 
+        ('Subscriptions', 'Subscriptions'), ('Entertainment', 'Entertainment'), ('Shopping', 'Shopping'), ('Medical', 'Medical'), ('Travel', 'Travel'), ('Other', 'Other')
         ], validators=[DataRequired()])
     
     amount = FloatField('Amount', validators=[DataRequired(), NumberRange(min=0.01)])
