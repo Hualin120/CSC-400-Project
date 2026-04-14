@@ -775,29 +775,61 @@ def avatar(user_id):
 @login_required
 def edit_profile():
     profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+
     if not profile:
         profile = UserProfile(user_id=current_user.id)
         db.session.add(profile)
-    
-    # update basic information
-    profile.first_name = request.form.get('first_name', '').strip() or None
-    profile.middle_name = request.form.get('middle_name', '').strip() or None
-    profile.last_name = request.form.get('last_name', '').strip() or None
-    
-    # handling avatar
+
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    # only avatar
     avatar_file = request.files.get('avatar')
+
+    avatar_updated = False
+
     if avatar_file and avatar_file.filename:
         allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif']
+
         if avatar_file.mimetype not in allowed_types:
-            flash('Only PNG, JPEG, and GIF images are allowed.', 'danger')
-            return redirect(url_for('profile'))
-        
+            if is_ajax:
+                return {"success": False, "message": "Invalid file type"}
+            else:
+                flash('Only PNG, JPEG, JPG, GIF allowed', 'danger')
+                return redirect(url_for('profile'))
+
         profile.avatar = avatar_file.read()
         profile.avatar_mime_type = avatar_file.mimetype
-    
+        avatar_updated = True
+
+    # edit profile, form
+    profile_updated = False
+
+    if not is_ajax:
+        profile.first_name = request.form.get('first_name', '').strip() or None
+        profile.middle_name = request.form.get('middle_name', '').strip() or None
+        profile.last_name = request.form.get('last_name', '').strip() or None
+
+        profile.address = request.form.get('address', '').strip() or None
+        profile.city = request.form.get('city', '').strip() or None
+        profile.state = request.form.get('state', '').strip() or None
+        profile.zip_code = request.form.get('zip_code', '').strip() or None
+        profile.country = request.form.get('country', '').strip() or None
+
+        profile_updated = True
+
     db.session.commit()
-    
-    flash('Profile updated successfully!', 'success')
+
+    # depend on the type of information to send flash message 
+    if is_ajax:
+        if avatar_updated:
+            flash('Avatar updated successfully!', 'success')
+        return {"success": True}
+
+        
+    if profile_updated:
+        flash('Profile updated successfully!', 'success')
+
+
     return redirect(url_for('profile'))
 
 if __name__ == '__main__':

@@ -113,6 +113,13 @@ class UserProfile(db.Model):
     first_name = db.Column(db.String(20), nullable=True)
     middle_name = db.Column(db.String(20), nullable=True)
     last_name = db.Column(db.String(20), nullable=True)
+
+    address = db.Column(db.String(200), nullable=True)
+    city = db.Column(db.String(50), nullable=True)
+    state = db.Column(db.String(50), nullable=True)
+    zip_code = db.Column(db.String(20), nullable=True)
+    country = db.Column(db.String(50), nullable=True)
+    
     avatar = db.Column(db.LargeBinary)
     avatar_mime_type = db.Column(db.String(50))
 
