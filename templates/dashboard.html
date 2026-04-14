@@ -24,9 +24,9 @@
                             type="button"
                             class="btn btn-outline-secondary month-dropdown-toggle"
                             id="monthDropdownButton"
-                            {% if selected_year == 'all' %}disabled{% endif %}
+                            {% if selected_year|string == 'all' %}disabled{% endif %}
                         >
-                            {% if selected_year == 'all' %}
+                            {% if selected_year|string == 'all' %}
                                 All Months
                             {% elif selected_months|length == 12 %}
                                 All Months
@@ -77,8 +77,8 @@
                         id="year"
                         class="form-select"
                     >
-                        <option value="all" {% if selected_year == 'all' %}selected{% endif %}>All Years</option>
-                        {% for y in year_options %}
+                        <option value="all" {% if selected_year|string == 'all' %}selected{% endif %}>All Years</option>
+                        {% for y in year_options|reverse %}
                             <option value="{{ y }}" {% if y|string == selected_year|string %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
@@ -91,7 +91,7 @@
 
             <small class="text-muted d-block mt-2">
                 Showing:
-                {% if selected_year == 'all' %}
+                {% if selected_year|string == 'all' %}
                     All Years
                 {% elif selected_months|length == 12 %}
                     All Months {{ selected_year }}
@@ -246,6 +246,13 @@
         <div class="app-card h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0">Spending Overview</h4>
+
+                <select id="dashboardChartType" class="form-select" style="max-width: 200px;">
+                    <option value="bar" selected>Bar Chart</option>
+                    <option value="line">Line Chart</option>
+                    <option value="incomePie">Income Categories</option>
+                    <option value="expensePie">Expense Categories</option>
+                </select>
             </div>
 
             <div style="height: 320px;">
@@ -259,25 +266,58 @@
 <script id="chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
 <script id="chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    var dropdownButton = document.getElementById("monthDropdownButton");
-    var dropdownMenu = document.getElementById("monthDropdownMenu");
-    var selectAllBtn = document.getElementById("selectAllMonths");
-    var clearAllBtn = document.getElementById("clearAllMonths");
-    var allMonthsCheckbox = document.getElementById("allMonthsCheckbox");
-    var monthCheckboxes = document.querySelectorAll(".month-checkbox");
-    var yearSelect = document.getElementById("year");
+<script id="income-category-labels" type="application/json">{{ income_category_labels | tojson }}</script>
+<script id="income-category-data" type="application/json">{{ income_category_data | tojson }}</script>
+<script id="expense-category-labels" type="application/json">{{ expense_category_labels | tojson }}</script>
+<script id="expense-category-data" type="application/json">{{ expense_category_data | tojson }}</script>
 
-    function syncAllCheckbox() {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+function setupMonthDropdown(config) {
+    var dropdownButton = document.getElementById(config.buttonId);
+    var dropdownMenu = document.getElementById(config.menuId);
+    var selectAllBtn = document.getElementById(config.selectAllId);
+    var clearAllBtn = document.getElementById(config.clearAllId);
+    var allMonthsCheckbox = document.getElementById(config.allCheckboxId);
+    var monthCheckboxes = document.querySelectorAll(config.monthCheckboxSelector);
+    var yearSelect = document.getElementById(config.yearSelectId);
+    var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    function getCheckedCount() {
         var checkedCount = 0;
         monthCheckboxes.forEach(function (checkbox) {
-            if (checkbox.checked) {
-                checkedCount++;
-            }
+            if (checkbox.checked) checkedCount++;
         });
-        allMonthsCheckbox.checked = checkedCount === 12;
+        return checkedCount;
+    }
+
+    function syncAllCheckbox() {
+        if (allMonthsCheckbox) {
+            allMonthsCheckbox.checked = getCheckedCount() === 12;
+        }
+    }
+
+    function updateButtonText() {
+        if (!dropdownButton) return;
+
+        if (yearSelect && yearSelect.value === "all") {
+            dropdownButton.textContent = "All Months";
+            return;
+        }
+
+        var checked = [];
+        monthCheckboxes.forEach(function (checkbox) {
+            if (checkbox.checked) checked.push(parseInt(checkbox.value, 10));
+        });
+
+        if (checked.length === 12 || checked.length === 0) {
+            dropdownButton.textContent = "All Months";
+        } else if (checked.length === 1) {
+            dropdownButton.textContent = monthNames[checked[0] - 1];
+        } else {
+            dropdownButton.textContent = checked.length + " Months Selected";
+        }
     }
 
     if (dropdownButton && dropdownMenu) {
@@ -300,6 +340,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 checkbox.checked = true;
             });
             syncAllCheckbox();
+            updateButtonText();
         });
     }
 
@@ -309,6 +350,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 checkbox.checked = false;
             });
             syncAllCheckbox();
+            updateButtonText();
         });
     }
 
@@ -317,12 +359,14 @@ document.addEventListener("DOMContentLoaded", function () {
             monthCheckboxes.forEach(function (checkbox) {
                 checkbox.checked = allMonthsCheckbox.checked;
             });
+            updateButtonText();
         });
     }
 
     monthCheckboxes.forEach(function (checkbox) {
         checkbox.addEventListener("change", function () {
             syncAllCheckbox();
+            updateButtonText();
         });
     });
 
@@ -334,92 +378,243 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
                 syncAllCheckbox();
 
-                if (dropdownMenu) {
-                    dropdownMenu.classList.remove("show");
-                }
-
-                if (dropdownButton) {
-                    dropdownButton.disabled = true;
-                    dropdownButton.textContent = "All Months";
-                }
+                if (dropdownMenu) dropdownMenu.classList.remove("show");
+                if (dropdownButton) dropdownButton.disabled = true;
             } else {
-                if (dropdownButton) {
-                    dropdownButton.disabled = false;
-                }
+                if (dropdownButton) dropdownButton.disabled = false;
             }
+
+            updateButtonText();
         });
     }
 
     syncAllCheckbox();
+    updateButtonText();
+}
 
-    var labelsElement = document.getElementById("chart-labels");
-    var incomeElement = document.getElementById("chart-income-data");
-    var expenseElement = document.getElementById("chart-expense-data");
+document.addEventListener("DOMContentLoaded", function () {
+    setupMonthDropdown({
+        buttonId: "monthDropdownButton",
+        menuId: "monthDropdownMenu",
+        selectAllId: "selectAllMonths",
+        clearAllId: "clearAllMonths",
+        allCheckboxId: "allMonthsCheckbox",
+        monthCheckboxSelector: ".month-checkbox",
+        yearSelectId: "year"
+    });
+
+    var labels = JSON.parse(document.getElementById("chart-labels").textContent);
+    var incomeData = JSON.parse(document.getElementById("chart-income-data").textContent);
+    var expenseData = JSON.parse(document.getElementById("chart-expense-data").textContent);
+
+    var incomeCategoryLabels = JSON.parse(document.getElementById("income-category-labels").textContent);
+    var incomeCategoryData = JSON.parse(document.getElementById("income-category-data").textContent);
+    var expenseCategoryLabels = JSON.parse(document.getElementById("expense-category-labels").textContent);
+    var expenseCategoryData = JSON.parse(document.getElementById("expense-category-data").textContent);
+
     var canvas = document.getElementById("incomeExpenseChart");
+    var chartTypeSelect = document.getElementById("dashboardChartType");
 
-    if (!labelsElement || !incomeElement || !expenseElement || !canvas) {
-        return;
-    }
-
-    var labels = JSON.parse(labelsElement.textContent);
-    var incomeData = JSON.parse(incomeElement.textContent);
-    var expenseData = JSON.parse(expenseElement.textContent);
+    if (!canvas) return;
 
     var ctx = canvas.getContext("2d");
+    var currentChart;
 
-    new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: "Income",
-                    data: incomeData,
-                    backgroundColor: "rgba(34, 197, 94, 0.7)",
-                    borderColor: "rgba(34, 197, 94, 1)",
-                    borderWidth: 1,
-                    borderRadius: 6
+    function pieTooltipLabel(context) {
+        const data = context.dataset.data || [];
+        const total = data.reduce((sum, value) => sum + Number(value || 0), 0);
+        const value = Number(context.raw || 0);
+        const percent = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+        const word = value === 1 ? "transaction" : "transactions";
+        return `${context.label}: ${value} ${word} (${percent}%)`;
+    }
+
+    function buildChartConfig(chartType) {
+        if (chartType === "line") {
+            return {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Income",
+                            data: incomeData,
+                            borderColor: "rgba(34, 197, 94, 1)",
+                            backgroundColor: "rgba(34, 197, 94, 0.15)",
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: "Expenses",
+                            data: expenseData,
+                            borderColor: "rgba(239, 68, 68, 1)",
+                            backgroundColor: "rgba(239, 68, 68, 0.15)",
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
                 },
-                {
-                    label: "Expenses",
-                    data: expenseData,
-                    backgroundColor: "rgba(239, 68, 68, 0.7)",
-                    borderColor: "rgba(239, 68, 68, 1)",
-                    borderWidth: 1,
-                    borderRadius: 6
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 800
-            },
-            plugins: {
-                legend: {
-                    position: "top"
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return "$" + value;
+                                }
+                            }
                         }
                     }
                 }
+            };
+        }
+
+        if (chartType === "incomePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: incomeCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Income Categories",
+                            data: incomeCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        if (chartType === "expensePie") {
+            return {
+                type: "pie",
+                data: {
+                    labels: expenseCategoryLabels,
+                    datasets: [
+                        {
+                            label: "Expense Categories",
+                            data: expenseCategoryData
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 800 },
+                    plugins: {
+                        legend: { position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: pieTooltipLabel
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        return {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: incomeData,
+                        backgroundColor: "rgba(34, 197, 94, 0.7)",
+                        borderColor: "rgba(34, 197, 94, 1)",
+                        borderWidth: 1,
+                        borderRadius: 6
+                    },
+                    {
+                        label: "Expenses",
+                        data: expenseData,
+                        backgroundColor: "rgba(239, 68, 68, 0.7)",
+                        borderColor: "rgba(239, 68, 68, 1)",
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }
+                ]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return "$" + value;
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 800 },
+                plugins: {
+                    legend: { position: "top" },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ": $" + Number(context.raw).toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return "$" + value;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        };
+    }
+
+    function renderChart(chartType) {
+        if (currentChart) currentChart.destroy();
+        currentChart = new Chart(ctx, buildChartConfig(chartType));
+    }
+
+    const dashboardChartStorageKey = "dashboardChartType";
+    const savedDashboardChartType = localStorage.getItem(dashboardChartStorageKey) || "bar";
+
+    if (chartTypeSelect) {
+        chartTypeSelect.value = savedDashboardChartType;
+    }
+
+    renderChart(savedDashboardChartType);
+
+    if (chartTypeSelect) {
+        chartTypeSelect.addEventListener("change", function () {
+            localStorage.setItem(dashboardChartStorageKey, chartTypeSelect.value);
+            renderChart(chartTypeSelect.value);
+        });
+    }
 });
 </script>
 
