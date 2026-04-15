@@ -708,32 +708,45 @@ def add_transaction():
 
     return redirect(url_for('transactions'))
 
+@app.route('/edit-transaction/<string:type>/<int:id>', methods=['POST'])
+@login_required
+def edit_transaction(type, id):
+    if type == 'income':
+        transaction = Income.query.get_or_404(id)
+    elif type == 'expense':
+        transaction = Expense.query.get_or_404(id)
+    else:
+        flash('Invalid transaction type.', 'danger')
+        return redirect(url_for('transactions'))
+
+    try:
+        transaction.amount = float(request.form.get('amount', 0))
+        transaction.category = request.form.get('category', '').strip()
+        transaction.description = request.form.get('description', '').strip()
+        transaction.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
+
+        db.session.commit()
+        flash(f'{type.capitalize()} updated successfully.', 'success')
+    except ValueError:
+        flash('Invalid date or amount.', 'danger')
+
+    return redirect(url_for('transactions'))
 
 @app.route('/delete_transaction/<string:type>/<int:id>', methods=['POST'])
 @login_required
 def delete_transaction(type, id):
-    try:
-        if type == 'income':
-            transaction = Income.query.join(AccountBook).filter(
-                Income.id == id,
-                AccountBook.user_id == current_user.id
-            ).first_or_404()
-        else:
-            transaction = Expense.query.join(AccountBook).filter(
-                Expense.id == id,
-                AccountBook.user_id == current_user.id
-            ).first_or_404()
+    if type == 'income':
+        transaction = Income.query.get_or_404(id)
+    elif type == 'expense':
+        transaction = Expense.query.get_or_404(id)
+    else:
+        flash('Invalid transaction type.', 'danger')
+        return redirect(url_for('transactions'))
 
-        db.session.delete(transaction)
-        db.session.commit()
-        flash('Transaction deleted successfully.', 'success')
-
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error deleting transaction: {str(e)}', 'danger')
-
+    db.session.delete(transaction)
+    db.session.commit()
+    flash(f'{type.capitalize()} deleted successfully.', 'success')
     return redirect(url_for('transactions'))
-
 
 @app.route('/create_account_book', methods=['POST'])
 @login_required
