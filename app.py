@@ -209,7 +209,6 @@ def verify_email():
 
     return render_template("verify_email.html", form=form)
 
-
 @app.route("/verify-email/resend")
 @login_required
 def resend_verify_email():
@@ -228,7 +227,6 @@ def resend_verify_email():
     )
 
     return redirect(url_for("verify_email"))
-
 
 # -------------------
 # FORGOT PASSWORD (send link)
@@ -442,16 +440,16 @@ def dashboard():
     chart_income_data = [chart_data[label]["income"] for label in chart_labels]
     chart_expense_data = [chart_data[label]["expense"] for label in chart_labels]
 
-    # PIE CHART DATA = CATEGORY COUNTS
-    income_category_counts = OrderedDict()
+    # PIE CHART DATA = CATEGORY TOTAL DOLLAR AMOUNTS
+    income_category_totals = OrderedDict()
     for income in filtered_incomes:
         category = income.category or "Other"
-        income_category_counts[category] = income_category_counts.get(category, 0) + 1
+        income_category_totals[category] = income_category_totals.get(category, 0) + float(income.amount)
 
-    expense_category_counts = OrderedDict()
+    expense_category_totals = OrderedDict()
     for expense in filtered_expenses:
         category = expense.category or "Other"
-        expense_category_counts[category] = expense_category_counts.get(category, 0) + 1
+        expense_category_totals[category] = expense_category_totals.get(category, 0) + float(expense.amount)
 
     return render_template(
         "dashboard.html",
@@ -468,10 +466,10 @@ def dashboard():
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
         chart_expense_data=chart_expense_data,
-        income_category_labels=list(income_category_counts.keys()),
-        income_category_data=list(income_category_counts.values()),
-        expense_category_labels=list(expense_category_counts.keys()),
-        expense_category_data=list(expense_category_counts.values())
+        income_category_labels=list(income_category_totals.keys()),
+        income_category_data=list(income_category_totals.values()),
+        expense_category_labels=list(expense_category_totals.keys()),
+        expense_category_data=list(expense_category_totals.values())
     )
 
 @app.route("/transactions", methods=["GET"])
@@ -616,16 +614,16 @@ def transactions():
     chart_income_data = [chart_data[label]["income"] for label in chart_labels]
     chart_expense_data = [chart_data[label]["expense"] for label in chart_labels]
 
-    # PIE CHART DATA = CATEGORY COUNTS, NOT AMOUNTS
-    income_category_counts = OrderedDict()
+    # PIE CHART DATA = CATEGORY TOTAL DOLLAR AMOUNTS
+    income_category_totals = OrderedDict()
     for income in filtered_incomes:
         category = income.category or "Other"
-        income_category_counts[category] = income_category_counts.get(category, 0) + 1
+        income_category_totals[category] = income_category_totals.get(category, 0) + float(income.amount)
 
-    expense_category_counts = OrderedDict()
+    expense_category_totals = OrderedDict()
     for expense in filtered_expenses:
         category = expense.category or "Other"
-        expense_category_counts[category] = expense_category_counts.get(category, 0) + 1
+        expense_category_totals[category] = expense_category_totals.get(category, 0) + float(expense.amount)
 
     form = TransactionForm()
 
@@ -646,10 +644,10 @@ def transactions():
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
         chart_expense_data=chart_expense_data,
-        income_category_labels=list(income_category_counts.keys()),
-        income_category_data=list(income_category_counts.values()),
-        expense_category_labels=list(expense_category_counts.keys()),
-        expense_category_data=list(expense_category_counts.values())
+        income_category_labels=list(income_category_totals.keys()),
+        income_category_data=list(income_category_totals.values()),
+        expense_category_labels=list(expense_category_totals.keys()),
+        expense_category_data=list(expense_category_totals.values())
     )
 
 @app.route('/add_transaction', methods=['POST'])

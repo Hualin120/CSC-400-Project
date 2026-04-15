@@ -149,8 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const total = data.reduce((sum, value) => sum + Number(value || 0), 0);
         const value = Number(context.raw || 0);
         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
-        const word = value === 1 ? "transaction" : "transactions";
-        return `${context.label}: ${value} ${word} (${percent}%)`;
+        return `${context.label}: $${value.toFixed(2)} (${percent}%)`;
     }
 
     function buildChartConfig(chartType) {
