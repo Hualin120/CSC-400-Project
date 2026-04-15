@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy import or_, extract
 
 import calendar
+import re
 from datetime import datetime, timedelta, date, time
 
 from forms import (
@@ -837,6 +838,13 @@ def settings():
 @login_required
 def profile():
     user_profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+    phone = request.form.get('phone', '').strip()
+
+    phone_pattern = re.compile(r'^\+?\d{10,15}$')
+
+    if phone and not phone_pattern.match(phone):
+        flash("Invalid phone number format.", "danger")
+        return redirect(url_for('profile'))
     return render_template('profile.html', user=current_user, profile=user_profile)
 
 @app.route('/avatar/<int:user_id>')

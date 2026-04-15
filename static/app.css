@@ -213,6 +213,15 @@ body:not(.sidebar-open) .app-main {
     font-weight: 600;
 }
 
+.red-badge {
+    background: #fcb8b8;
+    color: #971006;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 h1 {
     font-size: 2.2rem;
     font-weight: 700;
@@ -443,12 +452,11 @@ p {
 }
 
 .avatar-img {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
+    width: 200px;
+    height: 200px;
     object-fit: cover;
+    border-radius: 50%;
     border: 3px solid #2563eb;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .avatar-section {
