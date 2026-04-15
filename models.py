@@ -114,6 +114,8 @@ class UserProfile(db.Model):
     middle_name = db.Column(db.String(20), nullable=True)
     last_name = db.Column(db.String(20), nullable=True)
 
+    phone = db.Column(db.String(20), nullable=True)
+
     address = db.Column(db.String(200), nullable=True)
     city = db.Column(db.String(50), nullable=True)
     state = db.Column(db.String(50), nullable=True)

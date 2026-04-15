@@ -65,7 +65,15 @@
                     </div>
 
                 </div>
-                
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
+                            <small class="text-muted">Phone</small>
+                            <p class="mb-0 fw-semibold">{{ profile.phone or 'Not set' }}</p>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
@@ -123,6 +131,13 @@
                 <label class="form-label"><strong>Last Name:</strong></label>
                 <input type="text" name="last_name" class="form-control" value="{{ profile.last_name or '' }}">
             </div>
+
+
+            <div class="mb-3">
+                <label class="form-label">Phone:</label>
+                <input type="tel" name="phone" class="form-control" value="{{ profile.phone or '' }}">
+            </div>
+
 
             <div class="mb-3">
                 <label class="form-label">Address:</label>
