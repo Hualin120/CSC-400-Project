@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Profile{% endblock %}
-
 {% block content %}
-<div class="container">
-  
+
+<div class="mb-4">
+    <h1 class="fw-bold mb-2">Profile</h1>
+    <p class="text-muted mb-0">
+        Edit and add personal information.</strong>.
+    </p>
+</div>
+
     <div class="app-card p-4 mb-4">
         <div class="avatar-section">
-            
             <div onclick="triggerAvatarUpload()" style="cursor: pointer; position: relative;">
                 <img src="{{ url_for('avatar', user_id=user.id) }}" alt="Avatar" class="avatar-img" id="userAvatar">
                 <div class="avatar-overlay">
@@ -20,10 +24,7 @@
     
     <div class="app-card p-4 mb-4">
         <h2 class="h4 mb-3">{{ user.username }}'s Profile</h2>
-        
             <div id="displayMode">
-
-
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <div class="app-card p-3 h-100" style="background-color: #f8fafc;">
@@ -38,9 +39,7 @@
                             <p class="mb-0 fw-semibold">{{ user.username }}</p>
                         </div>
                     </div>
-
                 </div>
-                
 
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
@@ -114,7 +113,6 @@
         
         <button onclick="enterEditMode()" class="btn btn-primary">Edit Profile</button>
     </div>
-        
         <!-- edit form -->
         <form method="POST" action="{{ url_for('edit_profile') }}" enctype="multipart/form-data" id="editForm" style="display: none;">
             <div class="mb-3">
@@ -206,7 +204,6 @@
                     <option value="WY" {% if profile.state == 'WY' %}selected{% endif %}>Wyoming</option>
                 </select>
             </div>
-
                 <div class="col-md-3 mb-3">
                     <label class="form-label">ZIP Code:</label>
                     <input type="text" name="zip_code" class="form-control" value="{{ profile.zip_code or '' }}">
@@ -231,12 +228,19 @@
                 </select>
             </div>
                         
-            <button type="submit" class="btn btn-success">Save</button>
-            <button type="button" onclick="cancelEdit()" class="btn btn-secondary">Cancel</button>
+            <button
+                type="submit"
+                style="padding:8px 16px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">
+                Save Changes
+            </button>
+            <button 
+            type="button" 
+            onclick="cancelEdit()" 
+            style="padding:8px 16px; background:#6c757d; color:white; border:none; border-radius:6px; cursor:pointer;">
+            Cancel
+            </button>
         </form>
     </div>
-</div>
-
 <script>
 function enterEditMode() {
     document.getElementById('displayMode').style.display = 'none';
