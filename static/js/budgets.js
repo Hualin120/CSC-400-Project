@@ -62,83 +62,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const stillValid = allowedMonths.some(month => month.value === currentSelectedMonth);
 
             if (stillValid) {
-                monthSelect.value = currentSelectedMonth;
-            } else {
-                monthSelect.value = String(allowedMonths[0].value);
-            }
-        }
-
-        updateMonthOptions();
-        yearSelect.addEventListener("change", updateMonthOptions);
-    }
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-    const progressBars = document.querySelectorAll(".budget-progress-bar");
-
-    progressBars.forEach((bar) => {
-        let width = parseFloat(bar.dataset.width);
-
-        if (isNaN(width)) {
-            width = 0;
-        }
-
-        width = Math.max(0, Math.min(width, 100));
-
-        bar.style.width = "0%";
-
-        setTimeout(() => {
-            bar.style.width = width + "%";
-        }, 100);
-    });
-
-    const monthSelect = document.getElementById("month");
-    const yearSelect = document.getElementById("year");
-
-    if (monthSelect && yearSelect) {
-        const today = new Date();
-        const currentMonth = today.getMonth() + 1;
-        const currentYear = today.getFullYear();
-
-        const monthNames = [
-            { value: 1, label: "January" },
-            { value: 2, label: "February" },
-            { value: 3, label: "March" },
-            { value: 4, label: "April" },
-            { value: 5, label: "May" },
-            { value: 6, label: "June" },
-            { value: 7, label: "July" },
-            { value: 8, label: "August" },
-            { value: 9, label: "September" },
-            { value: 10, label: "October" },
-            { value: 11, label: "November" },
-            { value: 12, label: "December" }
-        ];
-
-        function updateMonthOptions() {
-            const selectedYear = parseInt(yearSelect.value);
-            const currentSelectedMonth = parseInt(monthSelect.value);
-
-            monthSelect.innerHTML = "";
-
-            let allowedMonths = monthNames;
-
-            if (selectedYear === currentYear) {
-                allowedMonths = monthNames.filter(month => month.value >= currentMonth);
-            }
-
-            allowedMonths.forEach(month => {
-                const option = document.createElement("option");
-                option.value = month.value;
-                option.textContent = month.label;
-                monthSelect.appendChild(option);
-            });
-
-            const stillValid = allowedMonths.some(month => month.value === currentSelectedMonth);
-
-            if (stillValid) {
-                monthSelect.value = currentSelectedMonth;
-            } else {
+                monthSelect.value = String(currentSelectedMonth);
+            } else if (allowedMonths.length > 0) {
                 monthSelect.value = String(allowedMonths[0].value);
             }
         }
@@ -166,11 +91,28 @@ document.addEventListener("DOMContentLoaded", function () {
     const originalYear = document.getElementById("original_budget_year");
 
     function openModal() {
+        if (!modalOverlay) return;
         modalOverlay.classList.remove("d-none");
         document.body.classList.add("modal-open");
     }
 
+    function hasUnsavedChanges() {
+        if (!editForm || !categoryInput || !amountInput || !monthInput || !yearInput ||
+            !originalCategory || !originalAmount || !originalMonth || !originalYear) {
+            return false;
+        }
+
+        return (
+            categoryInput.value !== originalCategory.value ||
+            amountInput.value !== originalAmount.value ||
+            monthInput.value !== originalMonth.value ||
+            yearInput.value !== originalYear.value
+        );
+    }
+
     function closeModal(forceClose = false) {
+        if (!modalOverlay || !editForm) return;
+
         if (!forceClose && hasUnsavedChanges()) {
             const discard = confirm("Discard changes?");
             if (!discard) {
@@ -183,18 +125,9 @@ document.addEventListener("DOMContentLoaded", function () {
         editForm.reset();
     }
 
-    function hasUnsavedChanges() {
-        if (!editForm) return false;
-
-        return (
-            categoryInput.value !== originalCategory.value ||
-            amountInput.value !== originalAmount.value ||
-            monthInput.value !== originalMonth.value ||
-            yearInput.value !== originalYear.value
-        );
-    }
-
     function updateEditMonthOptions() {
+        if (!monthInput || !yearInput) return;
+
         const today = new Date();
         const currentMonth = today.getMonth() + 1;
         const currentYear = today.getFullYear();
@@ -234,13 +167,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (stillValid) {
             monthInput.value = String(currentSelectedMonth);
-        } else {
+        } else if (allowedMonths.length > 0) {
             monthInput.value = String(allowedMonths[0].value);
         }
     }
 
     editButtons.forEach((button) => {
         button.addEventListener("click", function () {
+            if (!editForm || !accountBookIdInput || !accountBookNameInput || !categoryInput ||
+                !amountInput || !monthInput || !yearInput ||
+                !originalCategory || !originalAmount || !originalMonth || !originalYear) {
+                return;
+            }
+
             const budgetId = this.dataset.budgetId;
             const accountBookId = this.dataset.accountBookId;
             const accountBookName = this.dataset.accountBookName;
@@ -288,7 +227,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (modalOverlay) {
         modalOverlay.addEventListener("click", function (event) {
             if (event.target === modalOverlay) {
-                // intentionally do nothing so clicking outside does NOT close
+                // intentionally do nothing
             }
         });
     }
