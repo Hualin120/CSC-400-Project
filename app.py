@@ -3,8 +3,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
-from sqlalchemy import or_, extract, func
-
+from sqlalchemy import or_
 import calendar
 import re
 from datetime import datetime, timedelta, date, time
@@ -17,8 +16,8 @@ from forms import (
 from models import db, User, EmailToken, sha256, AccountBook, Income, Expense, UserProfile, Budget
 from utils.email_utils import send_email
 from utils.auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
-from auth_routes import auth_bp
-from csv_routes import csv_bp
+from routes.google_routes import auth_bp
+from routes.csv_routes import csv_bp
 from collections import OrderedDict
 from io import BytesIO
 
@@ -845,7 +844,7 @@ def avatar(user_id):
     
     if not profile or not profile.avatar:
         # no avatar; return default image.
-        return send_file('static/default_avatar.png', mimetype='image/png')
+        return send_file('static/images/default_avatar.png', mimetype='image/png')
     
     return make_response(profile.avatar, 200, {'Content-Type': profile.avatar_mime_type})
 

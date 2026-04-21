@@ -3,7 +3,7 @@
 {% block title %}Budgets{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='budgets.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/budgets.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -49,6 +49,7 @@
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
+            <label for="account_book_id" class="form-label fw-semibold">View Budgets</label>
             <form method="GET" class="d-flex gap-2 mb-3">
                 <select name="month" class="form-select" style="max-width: 180px;">
                     {% for i in range(1, 13) %}

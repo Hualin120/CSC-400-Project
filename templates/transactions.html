@@ -629,6 +629,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script id="book-chart-labels" type="application/json">{{ chart_labels | tojson }}</script>
 <script id="book-chart-income-data" type="application/json">{{ chart_income_data | tojson }}</script>
 <script id="book-chart-expense-data" type="application/json">{{ chart_expense_data | tojson }}</script>
