@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Budgets{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='budgets.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Budgets</h2>
+            <p class="text-muted mb-0">
+                {% if selected_book %}
+                    Manage your budgets for <strong>{{ selected_book.bookname }}</strong>.
+                {% else %}
+                    Create an account book first to start using budgets.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if account_books %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('budgets') }}">
+                <div class="row align-items-end">
+                    <div class="col-md-6 col-lg-4">
+                        <label for="account_book_id" class="form-label fw-semibold">Selected Account Book</label>
+                        <select
+                            name="account_book_id"
+                            id="account_book_id"
+                            class="form-select"
+                            onchange="this.form.submit()">
+                            {% for book in account_books %}
+                                <option value="{{ book.id }}"
+                                    {% if selected_book and book.id == selected_book.id %}selected{% endif %}>
+                                    {{ book.bookname }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" class="d-flex gap-2 mb-3">
+                <select name="month" class="form-select" style="max-width: 180px;">
+                    {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>
+                        {{ month_name[i] }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <select name="year" class="form-select" style="max-width: 150px;">
+                    {% for y in range(selected_year - 2, selected_year + 3) %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
+                        {{ y }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <!-- keep account book -->
+                <input type="hidden" name="account_book_id" value="{{ selected_book.id }}">
+                <button type="submit" class="btn btn-primary">Apply</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Budgeted</h6>
+                    <h3 class="mb-0 text-primary">${{ "%.2f"|format(total_budgeted|default(0)) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Spent</h6>
+                    <h3 class="mb-0 text-danger">${{ "%.2f"|format(total_spent|default(0)) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Remaining</h6>
+                    <h3 class="mb-0 {% if total_remaining > 0 %}text-success{% elif total_remaining < 0 %}text-danger{% endif %}">
+                        {% if total_remaining > 0 %}
+                            +${{ "%.2f"|format(total_remaining) }}
+                        {% elif total_remaining < 0 %}
+                            -${{ "%.2f"|format(total_remaining|abs) }}
+                        {% else %}
+                            $0.00
+                        {% endif %}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Add Budget</h5>
+
+                    {% if selected_book %}
+                    <form method="POST" action="{{ url_for('add_budget') }}">
+                        {{ form.hidden_tag() }}
+
+                        <input type="hidden" name="account_book_id" value="{{ selected_book.id }}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Account Book</label>
+                            <input type="text" class="form-control" value="{{ selected_book.bookname }}" disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.category.label(class="form-label fw-semibold") }}
+                            {{ form.category(class="form-select") }}
+                            {% if form.category.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.category.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.amount.label(class="form-label fw-semibold") }}
+                            {{ form.amount(class="form-control", placeholder="Enter budget amount") }}
+                            {% if form.amount.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.amount.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.month.label(class="form-label fw-semibold") }}
+                            {{ form.month(class="form-select", id="month") }}
+                            {% if form.month.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.month.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.year.label(class="form-label fw-semibold") }}
+                            {{ form.year(class="form-select", id="year") }}
+                            {% if form.year.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.year.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            Add Budget
+                        </button>
+                    </form>
+                    {% else %}
+                    <p class="text-muted mb-0">No account books found yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <h5 class="fw-bold mb-0">
+                            Budget Overview
+                            {% if selected_book %}
+                                — {{ selected_book.bookname }}
+                            {% endif %}
+                        </h5>
+                    </div>
+
+                    {% if budgets %}
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Budget</th>
+                                    <th>Spent</th>
+                                    <th>Remaining</th>
+                                    <th>Progress</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for budget in budgets %}
+                                <tr>
+                                    <td class="fw-semibold">{{ budget.category }}</td>
+                                    <td>${{ "%.2f"|format(budget.budget_amount) }}</td>
+                                    <td>${{ "%.2f"|format(budget.spent_amount) }}</td>
+                                    <td>${{ "%.2f"|format(budget.remaining_amount) }}</td>
+                                    <td style="min-width: 180px;">
+                                        <div class="progress" style="height: 10px;">
+                                            <div
+                                                class="progress-bar budget-progress-bar bg-{{ budget.status_class }}"
+                                                role="progressbar"
+                                                data-width="{{ budget.progress_width }}"
+                                                aria-valuenow="{{ budget.percentage_used }}"
+                                                aria-valuemin="0"
+                                                aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ budget.percentage_used }}%</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                            <button
+                                                type="button"
+                                                class="btn btn-primary"
+                                                data-budget-id="{{ budget.id }}"
+                                                data-account-book-id="{{ budget.account_book_id }}"
+                                                data-account-book-name="{{ selected_book.bookname if selected_book else '' }}"
+                                                data-category="{{ budget.category }}"
+                                                data-amount="{{ budget.budget_amount }}"
+                                                data-month="{{ budget.month }}"
+                                                data-year="{{ budget.year }}">
+                                                Edit
+                                            </button>
+
+                                            <form method="POST"
+                                                  action="{{ url_for('delete_budget', budget_id=budget.id) }}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Are you sure you want to delete this budget?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <h6 class="fw-semibold mb-2">No budgets yet</h6>
+                        <p class="text-muted mb-0">
+                            Add your first budget for
+                            {% if selected_book %}
+                                <strong>{{ selected_book.bookname }}</strong>
+                            {% else %}
+                                this account book
+                            {% endif %}.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="editBudgetModalOverlay" class="budget-modal-overlay d-none">
+    <div class="budget-modal" role="dialog" aria-modal="true" aria-labelledby="editBudgetModalTitle">
+        <div class="budget-modal-header">
+            <h2 id="editBudgetModalTitle" class="budget-modal-title">Edit Budget</h2>
+            <button type="button" id="closeEditBudgetModal" class="budget-modal-close" aria-label="Close">
+                &times;
+            </button>
+        </div>
+
+        <form id="editBudgetForm" method="POST">
+            <input type="hidden" name="account_book_id" id="edit_budget_account_book_id">
+            <input type="hidden" id="original_budget_category">
+            <input type="hidden" id="original_budget_amount">
+            <input type="hidden" id="original_budget_month">
+            <input type="hidden" id="original_budget_year">
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Account Book</label>
+                    <input type="text" id="edit_budget_account_book_name" class="form-control" disabled>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="edit_budget_amount" class="form-label fw-semibold">Budget Amount</label>
+                    <input type="number" step="0.01" min="0.01" name="amount" id="edit_budget_amount" class="form-control" required>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="edit_budget_category" class="form-label fw-semibold">Category</label>
+                    <select name="category" id="edit_budget_category" class="form-select" required>
+                        {% for value, label in form.category.choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="edit_budget_month" class="form-label fw-semibold">Month</label>
+                    <select name="month" id="edit_budget_month" class="form-select" required>
+                        {% for value, label in form.month.choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="edit_budget_year" class="form-label fw-semibold">Year</label>
+                    <select name="year" id="edit_budget_year" class="form-select" required>
+                        {% for value, label in form.year.choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="budget-modal-actions mt-4">
+                <button type="button" id="cancelEditBudget" class="btn btn-secondary px-4">Cancel</button>
+                <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/budgets.js') }}"></script>
+{% endblock %}
