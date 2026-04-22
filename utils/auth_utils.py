@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from flask import flash
 from models import db, EmailToken, sha256
-from email_utils import send_email
+from utils.email_utils import send_email
 
 
 def build_verify_email_html(username: str, code: str) -> str:

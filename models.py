@@ -105,6 +105,35 @@ class Expense(db.Model):
 
     account_book_id = db.Column(db.Integer, db.ForeignKey('account_books.id'), nullable=False)
 
+class Budget(db.Model):
+    __tablename__ = "budget"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    account_book_id = db.Column(db.Integer, db.ForeignKey("account_books.id"), nullable=False)
+
+    category = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+
+    month = db.Column(db.Integer, nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("budgets", lazy=True))
+    account_book = db.relationship("AccountBook", backref=db.backref("budgets", lazy=True))
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_id",
+            "account_book_id",
+            "category",
+            "month",
+            "year",
+            name="unique_budget_per_category_book_month_year"
+        ),
+    )
 
 class UserProfile(db.Model):
     __tablename__ = 'user_profile'
@@ -113,6 +142,8 @@ class UserProfile(db.Model):
     first_name = db.Column(db.String(20), nullable=True)
     middle_name = db.Column(db.String(20), nullable=True)
     last_name = db.Column(db.String(20), nullable=True)
+
+    phone = db.Column(db.String(20), nullable=True)
 
     address = db.Column(db.String(200), nullable=True)
     city = db.Column(db.String(50), nullable=True)

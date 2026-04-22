@@ -1,0 +1,152 @@
+/* ==========================
+   Budget Page Styles
+========================== */
+
+.budget-card {
+    border-radius: 16px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.budget-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.05);
+}
+
+
+/* --------------------------
+   Summary Cards
+-------------------------- */
+.budget-summary-card {
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.budget-summary-card h4 {
+    font-weight: 600;
+}
+
+
+/* --------------------------
+   Progress Bar
+-------------------------- */
+.budget-progress {
+    height: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.budget-progress .progress-bar {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+
+/* --------------------------
+   Status Colors (Optional polish)
+-------------------------- */
+.progress-bar.bg-success {
+    background-color: #28a745 !important;
+}
+
+.progress-bar.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000;
+}
+
+.progress-bar.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+
+/* --------------------------
+   Buttons
+-------------------------- */
+.btn-sm {
+    border-radius: 8px;
+}
+
+
+/* --------------------------
+   Empty State
+-------------------------- */
+.card-body.text-center h5 {
+    font-weight: 600;
+}
+
+
+/* --------------------------
+   Form spacing tweaks
+-------------------------- */
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+
+/* --------------------------
+   Responsive tweaks
+-------------------------- */
+@media (max-width: 768px) {
+    .budget-card {
+        padding: 10px;
+    }
+}
+
+.budget-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.budget-modal {
+    background: #fff;
+    width: 100%;
+    max-width: 900px;
+    border-radius: 28px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+    padding: 32px 32px 24px;
+    position: relative;
+}
+
+.budget-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.budget-modal-title {
+    margin: 0;
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.budget-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 2.25rem;
+    line-height: 1;
+    font-weight: 700;
+    color: #1f2937;
+    cursor: pointer;
+}
+
+.budget-modal-close:hover {
+    opacity: 0.8;
+}
+
+.budget-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+}
+
+body.modal-open {
+    overflow: hidden;
+}

@@ -213,6 +213,15 @@ body:not(.sidebar-open) .app-main {
     font-weight: 600;
 }
 
+.red-badge {
+    background: #fcb8b8;
+    color: #971006;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 h1 {
     font-size: 2.2rem;
     font-weight: 700;
@@ -443,12 +452,11 @@ p {
 }
 
 .avatar-img {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
+    width: 200px;
+    height: 200px;
     object-fit: cover;
+    border-radius: 50%;
     border: 3px solid #2563eb;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .avatar-section {
@@ -482,4 +490,92 @@ p {
 
 .avatar-section > div:hover .avatar-overlay {
     opacity: 1;
+}
+
+#transactionModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1100;
+}
+
+#transactionModal > div {
+    position: relative;
+    z-index: 1101;
+    pointer-events: auto;
+}
+
+.sortable-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.sortable-table th,
+.sortable-table td {
+    vertical-align: middle;
+}
+
+.sortable-table th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    font-weight: 700;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.sortable-table th:nth-child(1),
+.sortable-table td:nth-child(1) {
+    width: 19%;
+}
+
+.sortable-table th:nth-child(2),
+.sortable-table td:nth-child(2) {
+    width: 19%;
+}
+
+.sortable-table th:nth-child(3),
+.sortable-table td:nth-child(3) {
+    width: 26%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sortable-table th:nth-child(4),
+.sortable-table td:nth-child(4) {
+    width: 18%;
+}
+
+.sortable-table th:nth-child(5),
+.sortable-table td:nth-child(5) {
+    width: 18%;
+    text-align: center;
+}
+
+.sort-arrow {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-left: 2px;
+    transform: translateY(-2px);
+    vertical-align: middle;
+}
+
+.sort-arrow span {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: #6c757d;
+    line-height: 0.9;
+}
+
+.sort-arrow .arrow-up {
+    margin-bottom: 2px;
+}
+
+.sortable-table th:hover .sort-arrow span {
+    color: #2563eb;
 }

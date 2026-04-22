@@ -7,6 +7,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, PasswordField, SelectField, FloatField, DateField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, Optional, Regexp, ValidationError
 from datetime import datetime, date
+from calendar import month_name
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=30)])
@@ -69,3 +70,51 @@ class TransactionForm(FlaskForm):
         default=date.today
     )
     submit = SubmitField('Add Transaction')
+
+class BudgetForm(FlaskForm):
+    account_book_id = SelectField("Account Book", coerce=int, validators=[DataRequired()])
+
+    category = SelectField(
+        'Category',
+        choices=[
+        ('Housing', 'Housing'), ('Utilities','Utilities'), ('Groceries', 'Groceries'), ('Food', 'Food'), ('Transportation','Transportation'), ('Insurance', 'Insurance'), 
+        ('Subscriptions', 'Subscriptions'), ('Entertainment', 'Entertainment'), ('Shopping', 'Shopping'), ('Medical', 'Medical'), ('Travel', 'Travel'), ('Other', 'Other')
+        ],
+        validators=[DataRequired()]
+    )
+
+    amount = FloatField(
+        "Budget Amount",
+        validators=[DataRequired(), NumberRange(min=0.01, message="Budget amount must be greater than 0.")]
+    )
+
+    month = SelectField(
+        "Month",
+        coerce=int,
+        choices=[(i, month_name[i]) for i in range(1, 13)],
+        validators=[DataRequired()]
+    )
+
+    current_year = date.today().year
+    year = SelectField(
+        "Year",
+        coerce=int,
+        choices=[(y, str(y)) for y in range(current_year, current_year + 3)],
+        validators=[DataRequired()]
+    )
+
+    submit = SubmitField("Add Budget")
+
+    def validate_month(self, field):
+        selected_month = self.month.data
+        selected_year = self.year.data
+
+        today = date.today()
+        current_month = today.month
+        current_year = today.year
+
+        if selected_year < current_year:
+            raise ValidationError("You cannot create a budget for a past year.")
+
+        if selected_year == current_year and selected_month < current_month:
+            raise ValidationError("You cannot create a budget for a past month.")

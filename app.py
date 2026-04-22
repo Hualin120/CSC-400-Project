@@ -3,23 +3,33 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
-from sqlalchemy import or_, extract
-
+from sqlalchemy import or_
 import calendar
+import re
 from datetime import datetime, timedelta, date, time
 
 from forms import (
     LoginForm, RegisterForm, VerifyEmailForm, ForgotPasswordForm,
-    ResetPasswordForm, TransactionForm
+    ResetPasswordForm, TransactionForm, BudgetForm
 )
 
-from models import db, User, EmailToken, sha256, AccountBook, Income, Expense, UserProfile
-from email_utils import send_email
-from auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
-from auth_routes import auth_bp
-from csv_routes import csv_bp
+from models import db, User, EmailToken, sha256, AccountBook, Income, Expense, UserProfile, Budget
+from utils.email_utils import send_email
+from utils.auth_utils import send_verification_code, can_resend_verify_code, build_reset_password_html
+from routes.google_routes import auth_bp
+from routes.csv_routes import csv_bp
 from collections import OrderedDict
 from io import BytesIO
+
+from utils.budget_utils import (
+    build_budget_progress,
+    get_available_budget_years,
+    get_budget_summary,
+    get_overall_budget_summary,
+    get_overall_budget_warnings,
+    get_top_budget_warnings,
+    get_user_account_books
+)
 
 load_dotenv(override=True)
 print("MAILJET_API_KEY loaded?", bool(os.getenv("MAILJET_API_KEY")))
@@ -208,7 +218,6 @@ def verify_email():
 
     return render_template("verify_email.html", form=form)
 
-
 @app.route("/verify-email/resend")
 @login_required
 def resend_verify_email():
@@ -227,7 +236,6 @@ def resend_verify_email():
     )
 
     return redirect(url_for("verify_email"))
-
 
 # -------------------
 # FORGOT PASSWORD (send link)
@@ -294,7 +302,7 @@ def reset_password(raw_token):
 
     return render_template("reset_password.html", form=form)
 
-import calendar
+from calendar import month_name
 from collections import OrderedDict
 from datetime import date
 from flask_login import login_required, current_user
@@ -441,16 +449,16 @@ def dashboard():
     chart_income_data = [chart_data[label]["income"] for label in chart_labels]
     chart_expense_data = [chart_data[label]["expense"] for label in chart_labels]
 
-    # PIE CHART DATA = CATEGORY COUNTS
-    income_category_counts = OrderedDict()
+    # PIE CHART DATA = CATEGORY TOTAL DOLLAR AMOUNTS
+    income_category_totals = OrderedDict()
     for income in filtered_incomes:
         category = income.category or "Other"
-        income_category_counts[category] = income_category_counts.get(category, 0) + 1
+        income_category_totals[category] = income_category_totals.get(category, 0) + float(income.amount)
 
-    expense_category_counts = OrderedDict()
+    expense_category_totals = OrderedDict()
     for expense in filtered_expenses:
         category = expense.category or "Other"
-        expense_category_counts[category] = expense_category_counts.get(category, 0) + 1
+        expense_category_totals[category] = expense_category_totals.get(category, 0) + float(expense.amount)
 
     return render_template(
         "dashboard.html",
@@ -467,10 +475,10 @@ def dashboard():
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
         chart_expense_data=chart_expense_data,
-        income_category_labels=list(income_category_counts.keys()),
-        income_category_data=list(income_category_counts.values()),
-        expense_category_labels=list(expense_category_counts.keys()),
-        expense_category_data=list(expense_category_counts.values())
+        income_category_labels=list(income_category_totals.keys()),
+        income_category_data=list(income_category_totals.values()),
+        expense_category_labels=list(expense_category_totals.keys()),
+        expense_category_data=list(expense_category_totals.values())
     )
 
 @app.route("/transactions", methods=["GET"])
@@ -615,16 +623,16 @@ def transactions():
     chart_income_data = [chart_data[label]["income"] for label in chart_labels]
     chart_expense_data = [chart_data[label]["expense"] for label in chart_labels]
 
-    # PIE CHART DATA = CATEGORY COUNTS, NOT AMOUNTS
-    income_category_counts = OrderedDict()
+    # PIE CHART DATA = CATEGORY TOTAL DOLLAR AMOUNTS
+    income_category_totals = OrderedDict()
     for income in filtered_incomes:
         category = income.category or "Other"
-        income_category_counts[category] = income_category_counts.get(category, 0) + 1
+        income_category_totals[category] = income_category_totals.get(category, 0) + float(income.amount)
 
-    expense_category_counts = OrderedDict()
+    expense_category_totals = OrderedDict()
     for expense in filtered_expenses:
         category = expense.category or "Other"
-        expense_category_counts[category] = expense_category_counts.get(category, 0) + 1
+        expense_category_totals[category] = expense_category_totals.get(category, 0) + float(expense.amount)
 
     form = TransactionForm()
 
@@ -645,10 +653,10 @@ def transactions():
         chart_labels=chart_labels,
         chart_income_data=chart_income_data,
         chart_expense_data=chart_expense_data,
-        income_category_labels=list(income_category_counts.keys()),
-        income_category_data=list(income_category_counts.values()),
-        expense_category_labels=list(expense_category_counts.keys()),
-        expense_category_data=list(expense_category_counts.values())
+        income_category_labels=list(income_category_totals.keys()),
+        income_category_data=list(income_category_totals.values()),
+        expense_category_labels=list(expense_category_totals.keys()),
+        expense_category_data=list(expense_category_totals.values())
     )
 
 @app.route('/add_transaction', methods=['POST'])
@@ -708,32 +716,45 @@ def add_transaction():
 
     return redirect(url_for('transactions'))
 
+@app.route('/edit-transaction/<string:type>/<int:id>', methods=['POST'])
+@login_required
+def edit_transaction(type, id):
+    if type == 'income':
+        transaction = Income.query.get_or_404(id)
+    elif type == 'expense':
+        transaction = Expense.query.get_or_404(id)
+    else:
+        flash('Invalid transaction type.', 'danger')
+        return redirect(url_for('transactions'))
+
+    try:
+        transaction.amount = float(request.form.get('amount', 0))
+        transaction.category = request.form.get('category', '').strip()
+        transaction.description = request.form.get('description', '').strip()
+        transaction.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d').date()
+
+        db.session.commit()
+        flash(f'{type.capitalize()} updated successfully.', 'success')
+    except ValueError:
+        flash('Invalid date or amount.', 'danger')
+
+    return redirect(url_for('transactions'))
 
 @app.route('/delete_transaction/<string:type>/<int:id>', methods=['POST'])
 @login_required
 def delete_transaction(type, id):
-    try:
-        if type == 'income':
-            transaction = Income.query.join(AccountBook).filter(
-                Income.id == id,
-                AccountBook.user_id == current_user.id
-            ).first_or_404()
-        else:
-            transaction = Expense.query.join(AccountBook).filter(
-                Expense.id == id,
-                AccountBook.user_id == current_user.id
-            ).first_or_404()
+    if type == 'income':
+        transaction = Income.query.get_or_404(id)
+    elif type == 'expense':
+        transaction = Expense.query.get_or_404(id)
+    else:
+        flash('Invalid transaction type.', 'danger')
+        return redirect(url_for('transactions'))
 
-        db.session.delete(transaction)
-        db.session.commit()
-        flash('Transaction deleted successfully.', 'success')
-
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error deleting transaction: {str(e)}', 'danger')
-
+    db.session.delete(transaction)
+    db.session.commit()
+    flash(f'{type.capitalize()} deleted successfully.', 'success')
     return redirect(url_for('transactions'))
-
 
 @app.route('/create_account_book', methods=['POST'])
 @login_required
@@ -802,28 +823,18 @@ def delete_account_book(book_id):
         return redirect(url_for('transactions'))
 
 
-@app.route("/budgets")
-@login_required
-def budgets_list():
-    return "Budgets page placeholder"
-
-
-@app.route("/analytics")
-@login_required
-def analytics():
-    return "Analytics page placeholder"
-
-
-@app.route("/settings")
-@login_required
-def settings():
-    return "Settings page placeholder"
-
 
 @app.route('/profile')
 @login_required
 def profile():
     user_profile = UserProfile.query.filter_by(user_id=current_user.id).first()
+    phone = request.form.get('phone', '').strip()
+
+    phone_pattern = re.compile(r'^\+?\d{10,15}$')
+
+    if phone and not phone_pattern.match(phone):
+        flash("Invalid phone number format.", "danger")
+        return redirect(url_for('profile'))
     return render_template('profile.html', user=current_user, profile=user_profile)
 
 @app.route('/avatar/<int:user_id>')
@@ -833,11 +844,227 @@ def avatar(user_id):
     
     if not profile or not profile.avatar:
         # no avatar; return default image.
-        return send_file('static/default_avatar.png', mimetype='image/png')
+        return send_file('static/images/default_avatar.png', mimetype='image/png')
     
     return make_response(profile.avatar, 200, {'Content-Type': profile.avatar_mime_type})
 
+@app.route("/budgets", methods=["GET"])
+@login_required
+def budgets():
+    form = BudgetForm()
 
+    account_books = get_user_account_books(current_user.id)
+    selected_book_id = request.args.get("account_book_id", type=int)
+
+    selected_book = None
+    if account_books:
+        if selected_book_id:
+            selected_book = next((book for book in account_books if book.id == selected_book_id), None)
+
+        if not selected_book:
+            selected_book = next((book for book in account_books if book.is_default), None)
+
+        if not selected_book:
+            selected_book = account_books[0]
+
+    if account_books:
+        form.account_book_id.choices = [(book.id, book.bookname) for book in account_books]
+    else:
+        form.account_book_id.choices = []
+
+    today = date.today()
+    selected_month = request.args.get("month", default=today.month, type=int)
+    selected_year = request.args.get("year", default=today.year, type=int)
+
+    form.month.data = today.month
+    form.year.data = today.year
+
+    if selected_book:
+        form.account_book_id.data = selected_book.id
+
+        budget_progress = build_budget_progress(
+            current_user.id,
+            selected_book.id,
+            selected_month,
+            selected_year
+        )
+
+        summary = get_budget_summary(
+            current_user.id,
+            selected_book.id,
+            selected_month,
+            selected_year
+        )
+    else:
+        budget_progress = []
+        summary = {
+            "total_budget": 0.0,
+            "total_spent": 0.0,
+            "total_remaining": 0.0,
+            "over_budget_count": 0,
+            "warning_count": 0,
+            "budget_count": 0,
+        }
+
+    return render_template(
+        "budgets.html",
+        form=form,
+        account_books=account_books,
+        selected_book=selected_book,
+        budgets=budget_progress,
+        total_budgeted=summary["total_budget"],
+        total_spent=summary["total_spent"],
+        total_remaining=summary["total_remaining"],
+        selected_month=selected_month,
+        selected_year=selected_year,
+        month_name=month_name
+    )
+
+@app.route("/budgets/add_budget", methods=["POST"])
+@login_required
+def add_budget():
+    form = BudgetForm()
+    account_books = get_user_account_books(current_user.id)
+    form.account_book_id.choices = [(book.id, book.bookname) for book in account_books]
+
+    selected_book_id = request.form.get("account_book_id", type=int)
+
+    if form.validate_on_submit():
+        selected_book = AccountBook.query.filter_by(
+            id=selected_book_id,
+            user_id=current_user.id
+        ).first()
+
+        if not selected_book:
+            flash("Invalid account book selected.", "danger")
+            return redirect(url_for("budgets"))
+
+        existing_budget = Budget.query.filter_by(
+            user_id=current_user.id,
+            account_book_id=selected_book.id,
+            category=form.category.data,
+            month=form.month.data,
+            year=form.year.data
+        ).first()
+
+        if existing_budget:
+            flash("A budget for that category already exists for this month and year in this account book.", "warning")
+            return redirect(
+                url_for(
+                    "budgets",
+                    account_book_id=selected_book.id,
+                    month=form.month.data,
+                    year=form.year.data
+                )
+            )
+
+        new_budget = Budget(
+            user_id=current_user.id,
+            account_book_id=selected_book.id,
+            category=form.category.data,
+            amount=form.amount.data,
+            month=form.month.data,
+            year=form.year.data
+        )
+
+        db.session.add(new_budget)
+        db.session.commit()
+
+        flash("Budget added successfully.", "success")
+        return redirect(
+            url_for(
+                "budgets",
+                account_book_id=selected_book.id,
+                month=form.month.data,
+                year=form.year.data
+            )
+        )
+
+    flash("Please fix the form errors and try again.", "danger")
+    return redirect(
+        url_for(
+            "budgets",
+            account_book_id=selected_book_id
+        )
+    )
+
+@app.route("/budgets/<int:budget_id>/edit", methods=["POST"])
+@login_required
+def edit_budget(budget_id):
+    budget = Budget.query.filter_by(
+        id=budget_id,
+        user_id=current_user.id
+    ).first_or_404()
+
+    account_book_id = request.form.get("account_book_id", type=int)
+    category = request.form.get("category", "").strip()
+    amount = request.form.get("amount", type=float)
+    month = request.form.get("month", type=int)
+    year = request.form.get("year", type=int)
+
+    selected_book = AccountBook.query.filter_by(
+        id=account_book_id,
+        user_id=current_user.id
+    ).first()
+
+    if not selected_book:
+        flash("Invalid account book selected.", "danger")
+        return redirect(url_for("budgets"))
+
+    if not category:
+        flash("Category is required.", "danger")
+        return redirect(url_for("budgets", account_book_id=selected_book.id, month=budget.month, year=budget.year))
+
+    if amount is None or amount <= 0:
+        flash("Budget amount must be greater than 0.", "danger")
+        return redirect(url_for("budgets", account_book_id=selected_book.id, month=budget.month, year=budget.year))
+
+    from datetime import date
+    today = date.today()
+
+    if year < today.year or (year == today.year and month < today.month):
+        flash("You cannot move a budget to a past month.", "danger")
+        return redirect(url_for("budgets", account_book_id=selected_book.id, month=budget.month, year=budget.year))
+
+    existing_budget = Budget.query.filter(
+        Budget.user_id == current_user.id,
+        Budget.account_book_id == selected_book.id,
+        Budget.category == category,
+        Budget.month == month,
+        Budget.year == year,
+        Budget.id != budget.id
+    ).first()
+
+    if existing_budget:
+        flash("A budget for that category already exists for this month and year in this account book.", "warning")
+        return redirect(url_for("budgets", account_book_id=selected_book.id, month=month, year=year))
+
+    budget.account_book_id = selected_book.id
+    budget.category = category
+    budget.amount = amount
+    budget.month = month
+    budget.year = year
+
+    db.session.commit()
+
+    flash("Budget updated successfully.", "success")
+    return redirect(url_for("budgets", account_book_id=selected_book.id, month=month, year=year))
+
+@app.route("/budgets/<int:budget_id>/delete", methods=["POST"])
+@login_required
+def delete_budget(budget_id):
+    budget = Budget.query.filter_by(
+        id=budget_id,
+        user_id=current_user.id
+    ).first_or_404()
+
+    selected_book_id = budget.account_book_id
+
+    db.session.delete(budget)
+    db.session.commit()
+
+    flash("Budget deleted successfully.", "success")
+    return redirect(url_for("budgets", account_book_id=selected_book_id))
 
 @app.route('/edit_profile', methods=['POST'])
 @login_required
@@ -877,11 +1104,14 @@ def edit_profile():
         profile.middle_name = request.form.get('middle_name', '').strip() or None
         profile.last_name = request.form.get('last_name', '').strip() or None
 
+        profile.phone = request.form.get('phone', '').strip() or None
+
         profile.address = request.form.get('address', '').strip() or None
         profile.city = request.form.get('city', '').strip() or None
         profile.state = request.form.get('state', '').strip() or None
         profile.zip_code = request.form.get('zip_code', '').strip() or None
         profile.country = request.form.get('country', '').strip() or None
+        
 
         profile_updated = True
 
@@ -899,6 +1129,7 @@ def edit_profile():
 
 
     return redirect(url_for('profile'))
+
 
 if __name__ == '__main__':
     with app.app_context():
