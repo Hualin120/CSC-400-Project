@@ -484,12 +484,15 @@ def dashboard():
 @app.route("/transactions", methods=["GET"])
 @login_required
 def transactions():
+    # To check whether use got at aleast 1 account book
     account_books = AccountBook.query.filter_by(user_id=current_user.id).all()
 
+    # if not redirect to dashborad. But since we always have a default account book General, that shouldn't trigger 
     if not account_books:
-        flash('Please create an account book', 'info')
-        return redirect(url_for('create_account_book'))
+        flash('No account book found. Please contact support.', 'danger')
+        return redirect(url_for('dashboard'))
 
+    # create account book
     current_book_id = session.get('current_account_book')
     if not current_book_id or current_book_id not in [b.id for b in account_books]:
         current_book_id = account_books[0].id
@@ -662,10 +665,13 @@ def transactions():
 @app.route('/add_transaction', methods=['POST'])
 @login_required
 def add_transaction():
+    # getting information from form
     form = TransactionForm()
 
+    # get current account book from session
     current_book_id = session.get('current_account_book')
 
+    # to check the account book is current account book
     if not current_book_id:
         flash('Please select an account book first.', 'danger')
         return redirect(url_for('transactions'))
@@ -679,10 +685,13 @@ def add_transaction():
         flash('Invalid account book selected.', 'danger')
         return redirect(url_for('transactions'))
 
+    # to check if the form is valid
     if form.validate_on_submit():
         try:
+            # use users select date, if not use today's date
             transaction_date = form.date.data or date.today()
 
+            # create corresponding records based on the transaction type
             if form.type.data == 'income':
                 transaction = Income(
                     description=form.description.data,
@@ -709,7 +718,8 @@ def add_transaction():
             db.session.rollback()
             flash(f'Error adding transaction: {str(e)}', 'danger')
             return redirect(url_for('transactions'))
-
+        
+    # display specific error messages when form validation fails
     for field, errors in form.errors.items():
         for error in errors:
             flash(f'{getattr(form, field).label.text}: {error}', 'danger')
@@ -759,12 +769,15 @@ def delete_transaction(type, id):
 @app.route('/create_account_book', methods=['POST'])
 @login_required
 def create_account_book():
+    # Get the name from front end, and remove space at the front and the end
     book_name = request.form.get('book_name', '').strip()
     
+    # If the name is empty, redirect to transaction.html.
     if not book_name:
         flash('Account book name cannot be empty', 'danger')
         return redirect(url_for('transactions'))
     
+    # create new account book
     new_book = AccountBook(
         bookname=book_name,
         user_id=current_user.id
@@ -785,6 +798,7 @@ def create_account_book():
 @app.route('/switch_account_book/<int:book_id>')
 @login_required
 def switch_account_book(book_id):
+    # To cheack the account book is current account book 
     book = AccountBook.query.filter_by(id=book_id, user_id=current_user.id).first_or_404()
     session['current_account_book'] = book_id
     return redirect(url_for('transactions'))
@@ -793,18 +807,23 @@ def switch_account_book(book_id):
 @app.route('/delete_account_book/<int:book_id>', methods=['POST'])
 @login_required
 def delete_account_book(book_id):
+    # To cheack the account book is current account book 
     try:
         book = AccountBook.query.filter_by(id=book_id, user_id=current_user.id).first_or_404()
 
+        # If the current account book is default account book, it will redirect to transaction.html
         if book.is_default:
             flash(f'Cannot delete "{book.bookname}" because it is your default account book.', 'danger')
             return redirect(url_for('transactions'))
 
+        # query all account book information
         all_books = AccountBook.query.filter_by(user_id=current_user.id).all()
 
+        # get current account book
         current_book_id = session.get('current_account_book')
         need_switch = (current_book_id == book_id)
 
+        # delete account book
         db.session.delete(book)
         db.session.commit()
 

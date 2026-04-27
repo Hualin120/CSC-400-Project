@@ -378,6 +378,7 @@ def export_as_zip(books):
     zip_buffer = BytesIO()
     exported_count = 0
     
+    # create a zip file
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for book in books:
             # collect current account book transaction
@@ -386,6 +387,7 @@ def export_as_zip(books):
             incomes = Income.query.filter_by(account_book_id=book.id).all()
             expenses = Expense.query.filter_by(account_book_id=book.id).all()
             
+            # convert income/expense records to dictionary format
             for inc in incomes:
                 transactions.append({
                     'Date': inc.date.strftime('%m/%d/%Y'),
