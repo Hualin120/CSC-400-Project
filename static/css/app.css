@@ -43,11 +43,73 @@ body.app-body {
     height: 100vh;
     background: linear-gradient(180deg, #2563eb, #1e40af);
     color: white;
-    padding: 90px 20px 20px;
+    padding: 80px 20px 20px;
     transition: left 0.3s ease;
     z-index: 1100;
     box-shadow: 8px 0 30px rgba(0, 0, 0, 0.15);
     overflow-y: auto;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-logo {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.sidebar-logo img {
+    width: 165px;
+    height: auto;
+}
+
+.sidebar-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-links li {
+    margin-bottom: 8px;
+}
+
+#sidebar .sidebar-links a,
+#sidebar .logout-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    font-size: 17px;
+    font-weight: 600;
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+#sidebar .sidebar-links a:hover,
+#sidebar .logout-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(6px);
+}
+
+.sidebar-links i,
+.logout-link i {
+    font-size: 18px;
+    min-width: 20px;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+#sidebar .logout-link {
+    color: #ffdddd;
+}
+
+#sidebar .logout-link:hover {
+    color: white;
 }
 
 #sidebar.open {
@@ -578,4 +640,57 @@ p {
 
 .sortable-table th:hover .sort-arrow span {
     color: #2563eb;
+}
+
+/* TOP BAR */
+.top-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+/* RIGHT SIDE */
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* USER INFO */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 70px;        
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.user-name {
+    font-weight: 400;
+    font-size: 20px; 
+    color: #111827;
+}
+
+
+.logout-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    font-weight: 600;
+    color: #ffdddd;
+    text-decoration: none;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.logout-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
 }
