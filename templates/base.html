@@ -49,7 +49,21 @@
 
     <main class="app-main">
         <div class="app-shell mx-auto">
+            <!--  TOP RIGHT USER INFO -->
+            {% if current_user.is_authenticated and request.endpoint != 'profile' %}
+            <div class="top-bar">
+                <div class="user-info">
+                    <img 
+                        src="{{ url_for('avatar', user_id=current_user.id) }}" 
+                        alt="Profile" 
+                        class="user-avatar">
 
+                    <span class="user-name">
+                        {{ current_user.username }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
             <!-- Flash Messages -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
