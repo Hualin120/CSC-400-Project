@@ -106,7 +106,7 @@ class Expense(db.Model):
     account_book_id = db.Column(db.Integer, db.ForeignKey('account_books.id'), nullable=False)
 
 class Budget(db.Model):
-    __tablename__ = "budget"
+    __tablename__ = "budgets"
 
     id = db.Column(db.Integer, primary_key=True)
 

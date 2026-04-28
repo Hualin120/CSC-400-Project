@@ -20,6 +20,10 @@
                 {% endif %}
             {% endwith %}
 
+            <div class="auth-logo">
+                <img src="{{ url_for('static', filename='images/spendsenselogo.png') }}" alt="SpendSense Logo">
+            </div>
+
             {% block auth_content %}{% endblock %}
         </div>
     </div>
