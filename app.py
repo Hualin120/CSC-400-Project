@@ -501,14 +501,15 @@ def transactions():
     current_book = AccountBook.query.get(current_book_id)
 
     current_year = date.today().year
-    selected_year = request.args.get("year", "all")
-    selected_months = request.args.getlist("months")
+    selected_year = request.args.get("year", str(current_year))
+    selected_months = request.args.getlist("months", type=int)
 
     if selected_year == "all":
         selected_months = list(range(1, 13))
-    elif selected_months:
-        selected_months = [int(m) for m in selected_months]
     else:
+        selected_year = int(selected_year)
+
+    if not selected_months:
         selected_months = list(range(1, 13))
 
     all_incomes = Income.query.filter_by(account_book_id=current_book_id).order_by(Income.date.desc()).all()
