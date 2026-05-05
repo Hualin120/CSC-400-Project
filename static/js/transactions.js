@@ -53,8 +53,9 @@ function getCategoriesByType(type) {
 
 function populateModalCategoryOptions(type, selectedCategory) {
     const modalCategory = document.getElementById('modalCategory');
-    const categories = getCategoriesByType(type);
+    if (!modalCategory) return;
 
+    const categories = getCategoriesByType(type);
     modalCategory.innerHTML = '';
 
     categories.forEach(category => {
@@ -311,6 +312,7 @@ function setupMonthDropdown(config) {
                 monthCheckboxes.forEach(function (checkbox) {
                     checkbox.checked = true;
                 });
+
                 syncAllCheckbox();
 
                 if (dropdownMenu) dropdownMenu.classList.remove("show");
@@ -340,6 +342,8 @@ function parseAmount(amountStr) {
 
 function sortTable(tableId, columnIndex, type) {
     const table = document.getElementById(tableId);
+    if (!table) return;
+
     const tbody = table.querySelector('tbody');
     const rows = Array.from(tbody.querySelectorAll('tr'));
 
@@ -393,6 +397,7 @@ function updateSortArrows(table, activeColumn, ascending) {
 
 document.addEventListener("DOMContentLoaded", function() {
     const typeSelect = document.querySelector('select[name="type"]');
+
     if (typeSelect) {
         updateCategoryOptions();
         typeSelect.addEventListener('change', updateCategoryOptions);
@@ -409,6 +414,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     const closeTransactionModalBtn = document.getElementById('closeTransactionModalBtn');
+
     if (closeTransactionModalBtn) {
         closeTransactionModalBtn.addEventListener('click', function () {
             attemptCloseTransactionModal();
@@ -416,6 +422,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     const cancelTransactionBtn = document.getElementById('cancelTransactionBtn');
+
     if (cancelTransactionBtn) {
         cancelTransactionBtn.addEventListener('click', function () {
             attemptCloseTransactionModal();
@@ -423,6 +430,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     const deleteTransactionBtn = document.getElementById('deleteTransactionBtn');
+
     if (deleteTransactionBtn) {
         deleteTransactionBtn.addEventListener('click', function () {
             confirmDeleteTransaction();
@@ -442,37 +450,59 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     const editTransactionForm = document.getElementById('editTransactionForm');
+
     if (editTransactionForm) {
         editTransactionForm.addEventListener('submit', function () {
             transactionModalDirty = false;
         });
     }
 
-    var labels = JSON.parse(document.getElementById("book-chart-labels").textContent);
-    var incomeData = JSON.parse(document.getElementById("book-chart-income-data").textContent);
-    var expenseData = JSON.parse(document.getElementById("book-chart-expense-data").textContent);
+    const chartLabelsElement = document.getElementById("book-chart-labels");
+    const incomeDataElement = document.getElementById("book-chart-income-data");
+    const expenseDataElement = document.getElementById("book-chart-expense-data");
 
-    var incomeCategoryLabels = JSON.parse(document.getElementById("income-category-labels").textContent);
-    var incomeCategoryData = JSON.parse(document.getElementById("income-category-data").textContent);
-    var expenseCategoryLabels = JSON.parse(document.getElementById("expense-category-labels").textContent);
-    var expenseCategoryData = JSON.parse(document.getElementById("expense-category-data").textContent);
+    const incomeCategoryLabelsElement = document.getElementById("income-category-labels");
+    const incomeCategoryDataElement = document.getElementById("income-category-data");
+    const expenseCategoryLabelsElement = document.getElementById("expense-category-labels");
+    const expenseCategoryDataElement = document.getElementById("expense-category-data");
 
-    var canvas = document.getElementById("bookIncomeExpenseChart");
-    var chartTypeSelect = document.getElementById("transactionChartType");
+    const canvas = document.getElementById("bookIncomeExpenseChart");
+    const chartTypeSelect = document.getElementById("transactionChartType");
 
-    if (!canvas) return;
+    if (
+        !canvas ||
+        !chartLabelsElement ||
+        !incomeDataElement ||
+        !expenseDataElement ||
+        !incomeCategoryLabelsElement ||
+        !incomeCategoryDataElement ||
+        !expenseCategoryLabelsElement ||
+        !expenseCategoryDataElement
+    ) {
+        return;
+    }
 
-    var ctx = canvas.getContext("2d");
-    var currentChart;
+    const labels = JSON.parse(chartLabelsElement.textContent);
+    const incomeData = JSON.parse(incomeDataElement.textContent);
+    const expenseData = JSON.parse(expenseDataElement.textContent);
+
+    const incomeCategoryLabels = JSON.parse(incomeCategoryLabelsElement.textContent);
+    const incomeCategoryData = JSON.parse(incomeCategoryDataElement.textContent);
+    const expenseCategoryLabels = JSON.parse(expenseCategoryLabelsElement.textContent);
+    const expenseCategoryData = JSON.parse(expenseCategoryDataElement.textContent);
+
+    const ctx = canvas.getContext("2d");
+    let currentChart;
 
     function pieTooltipLabel(context) {
         const data = context.dataset.data || [];
         const total = data.reduce((sum, value) => sum + Number(value || 0), 0);
         const value = Number(context.raw || 0);
         const percent = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+
         return `${context.label}: $${value.toFixed(2)} (${percent}%)`;
     }
-    
+
     function buildChartConfig(chartType) {
         if (chartType === "line") {
             return {
@@ -640,12 +670,21 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function renderChart(chartType) {
-        if (currentChart) currentChart.destroy();
+        if (currentChart) {
+            currentChart.destroy();
+        }
+
         currentChart = new Chart(ctx, buildChartConfig(chartType));
     }
 
     const transactionChartStorageKey = "transactionChartType";
-    const savedTransactionChartType = localStorage.getItem(transactionChartStorageKey) || "bar";
+    const validTransactionChartTypes = ["bar", "line", "incomePie", "expensePie"];
+
+    let savedTransactionChartType = localStorage.getItem(transactionChartStorageKey);
+
+    if (!validTransactionChartTypes.includes(savedTransactionChartType)) {
+        savedTransactionChartType = "bar";
+    }
 
     if (chartTypeSelect) {
         chartTypeSelect.value = savedTransactionChartType;
