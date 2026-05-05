@@ -22,6 +22,21 @@ function closeCreateBookModal() {
     document.getElementById('createBookModal').style.display = 'none';
 }
 
+const transactionScrollStorageKey = "transactionsScrollPosition";
+
+function saveTransactionScrollPosition() {
+    sessionStorage.setItem(transactionScrollStorageKey, window.scrollY);
+}
+
+function restoreTransactionScrollPosition() {
+    const savedScrollPosition = sessionStorage.getItem(transactionScrollStorageKey);
+
+    if (savedScrollPosition !== null) {
+        window.scrollTo(0, parseInt(savedScrollPosition, 10));
+        sessionStorage.removeItem(transactionScrollStorageKey);
+    }
+}
+
 function getCategoriesByType(type) {
     const incomeCategories = [
         'Salary',
@@ -157,6 +172,9 @@ function confirmDeleteTransaction() {
     form.method = 'POST';
     form.action = `/delete_transaction/${type}/${id}`;
     document.body.appendChild(form);
+
+    saveTransactionScrollPosition();
+
     form.submit();
 }
 
@@ -396,6 +414,8 @@ function updateSortArrows(table, activeColumn, ascending) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+    restoreTransactionScrollPosition();
+
     const typeSelect = document.querySelector('select[name="type"]');
 
     if (typeSelect) {
@@ -454,6 +474,23 @@ document.addEventListener("DOMContentLoaded", function() {
     if (editTransactionForm) {
         editTransactionForm.addEventListener('submit', function () {
             transactionModalDirty = false;
+            saveTransactionScrollPosition();
+        });
+    }
+
+    const addTransactionForm = document.querySelector('form[action*="add_transaction"]');
+
+    if (addTransactionForm) {
+        addTransactionForm.addEventListener("submit", function () {
+            saveTransactionScrollPosition();
+        });
+    }
+
+    const timeframeForm = document.querySelector('form[action*="transactions"]');
+
+    if (timeframeForm) {
+        timeframeForm.addEventListener("submit", function () {
+            saveTransactionScrollPosition();
         });
     }
 
