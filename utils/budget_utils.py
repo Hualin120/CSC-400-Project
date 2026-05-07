@@ -3,8 +3,7 @@ from calendar import month_name
 from datetime import date
 from sqlalchemy import extract, func
 
-from app import db
-from models import Budget, Expense, AccountBook
+from models import db, Budget, Expense, AccountBook
 
 
 def get_month_label(month: int) -> str:
