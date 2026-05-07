@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Profile{% endblock %}
 
-{% block content %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
 
+{% block content %}
 <div class="mb-4">
     <h1 class="fw-bold mb-2">Profile</h1>
     <p class="text-muted mb-0">
@@ -11,7 +14,6 @@
 </div>
 
 <div class="app-card p-4 mb-4">
-
     <div id="displayMode">
         <div class="d-flex flex-column flex-lg-row align-items-center align-items-lg-start gap-4 mb-4">
             <div class="text-center">

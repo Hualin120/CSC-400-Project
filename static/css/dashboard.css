@@ -1,0 +1,84 @@
+.dashboard-chart-placeholder {
+    min-height: 260px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+}
+
+.month-dropdown {
+    position: relative;
+}
+
+.month-dropdown-toggle {
+    min-width: 210px;
+    text-align: left;
+    background-color: #fff;
+    color: #212529;
+    border: 1px solid #ced4da;
+}
+
+.month-dropdown-toggle:hover,
+.month-dropdown-toggle:focus {
+    background-color: #fff;
+    color: #212529;
+    border-color: #86b7fe;
+    box-shadow: none;
+}
+
+.month-dropdown-toggle:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    border-color: #ced4da;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.month-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 1050;
+    width: 240px;
+    background: #fff;
+    border: 1px solid #dbe3ea;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 12px;
+    display: none;
+}
+
+.month-dropdown-menu.show {
+    display: block;
+}
+
+.month-dropdown-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.month-checkbox-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+}
+
+.month-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin: 0;
+}
+
+.month-checkbox-item input {
+    cursor: pointer;
+}
