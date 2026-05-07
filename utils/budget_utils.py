@@ -1,22 +1,25 @@
-from collections import defaultdict
 from calendar import month_name
 from datetime import date
 from sqlalchemy import extract, func
 
 from models import db, Budget, Expense, AccountBook
 
-
+# Converts a month number into its readable month name.
+# Example: 1 -> January
 def get_month_label(month: int) -> str:
     """Return the month name for a month number."""
+
     if 1 <= month <= 12:
         return month_name[month]
+
     return "Unknown"
 
-
+# Returns all budgets for a specific user, account book, month, and year.
 def get_budgets(user_id, account_book_id, month, year):
     """
     Return all budgets for a specific user, account book, month, and year.
     """
+
     return (
         Budget.query
         .filter_by(
@@ -29,20 +32,24 @@ def get_budgets(user_id, account_book_id, month, year):
         .all()
     )
 
-
+# Calculates how much money was spent in each category for a selected month/year.
 def calculate_spent_by_category(user_id, account_book_id, month, year):
     """
     Return a dictionary of expense totals by category for a specific
     user, account book, month, and year.
+
     Example:
         {
             "Food": 180.0,
             "Gas": 70.0
         }
     """
+
     rows = (
         db.session.query(
             Expense.category,
+
+            # Uses SQL aggregation to total expenses by category.
             func.coalesce(func.sum(Expense.amount), 0.0)
         )
         .filter(
@@ -55,42 +62,60 @@ def calculate_spent_by_category(user_id, account_book_id, month, year):
     )
 
     spent_by_category = {}
+
     for category, total in rows:
         spent_by_category[category] = float(total or 0.0)
 
     return spent_by_category
 
-
+# Determines the Bootstrap color status based on budget usage.
 def get_status_class(percentage_used):
     """
     Return a status class based on budget usage percentage.
     """
+
     if percentage_used > 100:
         return "danger"
+
     if percentage_used >= 80:
         return "warning"
+
     return "success"
 
-
+# Builds detailed progress information for each budget category.
 def build_budget_progress(user_id, account_book_id, month, year):
     """
     Build detailed budget progress data for one account book and month/year.
     Returns a list of dictionaries ready for the template.
     """
+
     budgets = get_budgets(user_id, account_book_id, month, year)
-    spent_by_category = calculate_spent_by_category(user_id, account_book_id, month, year)
+
+    spent_by_category = calculate_spent_by_category(
+        user_id,
+        account_book_id,
+        month,
+        year
+    )
 
     budget_progress = []
 
     for budget in budgets:
+
+        # Gets how much was spent in the category.
         spent = float(spent_by_category.get(budget.category, 0.0))
+
+        # Calculates remaining money left in the budget.
         remaining = float(budget.amount - spent)
 
+        # Calculates the percentage of the budget that has been used.
         if budget.amount > 0:
             percentage_used = round((spent / budget.amount) * 100, 1)
+
         else:
             percentage_used = 0.0
 
+        # Prevents progress bars from visually exceeding 100%.
         progress_width = min(percentage_used, 100)
 
         budget_progress.append({
@@ -110,19 +135,34 @@ def build_budget_progress(user_id, account_book_id, month, year):
 
     return budget_progress
 
-
+# Generates summary totals for one account book's budgets.
 def get_budget_summary(user_id, account_book_id, month, year):
     """
     Return a summary for a single account book's budgets in a selected month/year.
     """
-    budget_progress = build_budget_progress(user_id, account_book_id, month, year)
 
+    budget_progress = build_budget_progress(
+        user_id,
+        account_book_id,
+        month,
+        year
+    )
+
+    # Calculates overall totals.
     total_budget = round(sum(item["budget_amount"] for item in budget_progress), 2)
+
     total_spent = round(sum(item["spent_amount"] for item in budget_progress), 2)
+
     total_remaining = round(total_budget - total_spent, 2)
 
-    over_budget_count = sum(1 for item in budget_progress if item["percentage_used"] > 100)
-    warning_count = sum(1 for item in budget_progress if 80 <= item["percentage_used"] <= 100)
+    # Counts categories that are over budget or close to the limit.
+    over_budget_count = sum(
+        1 for item in budget_progress if item["percentage_used"] > 100
+    )
+
+    warning_count = sum(
+        1 for item in budget_progress if 80 <= item["percentage_used"] <= 100
+    )
 
     return {
         "total_budget": total_budget,
@@ -133,14 +173,21 @@ def get_budget_summary(user_id, account_book_id, month, year):
         "budget_count": len(budget_progress),
     }
 
-
+# Returns the budget categories closest to or over the limit.
 def get_top_budget_warnings(user_id, account_book_id, month, year, limit=3):
     """
     Return the budget categories closest to or over the limit
     for one account book in a selected month/year.
     """
-    budget_progress = build_budget_progress(user_id, account_book_id, month, year)
 
+    budget_progress = build_budget_progress(
+        user_id,
+        account_book_id,
+        month,
+        year
+    )
+
+    # Sorts categories from highest usage percentage to lowest.
     sorted_items = sorted(
         budget_progress,
         key=lambda item: item["percentage_used"],
@@ -149,12 +196,13 @@ def get_top_budget_warnings(user_id, account_book_id, month, year, limit=3):
 
     return sorted_items[:limit]
 
-
+# Generates combined budget totals across all account books.
 def get_overall_budget_summary(user_id, month, year):
     """
     Return combined budget totals across all account books for one user
     in a selected month/year.
     """
+
     budgets = (
         Budget.query
         .filter_by(user_id=user_id, month=month, year=year)
@@ -163,6 +211,7 @@ def get_overall_budget_summary(user_id, month, year):
 
     total_budget = round(sum(float(b.amount) for b in budgets), 2)
 
+    # Calculates total spending across all account books.
     total_spent_result = (
         db.session.query(func.coalesce(func.sum(Expense.amount), 0.0))
         .join(AccountBook, Expense.account_book_id == AccountBook.id)
@@ -175,6 +224,7 @@ def get_overall_budget_summary(user_id, month, year):
     )
 
     total_spent = round(float(total_spent_result or 0.0), 2)
+
     total_remaining = round(total_budget - total_spent, 2)
 
     return {
@@ -184,12 +234,13 @@ def get_overall_budget_summary(user_id, month, year):
         "budget_count": len(budgets),
     }
 
-
+# Returns the highest budget warnings across all account books.
 def get_overall_budget_warnings(user_id, month, year, limit=5):
     """
     Return top budget warnings across all account books.
     Each result includes the account book name.
     """
+
     budgets = (
         Budget.query
         .filter_by(user_id=user_id, month=month, year=year)
@@ -199,6 +250,8 @@ def get_overall_budget_warnings(user_id, month, year, limit=5):
     warnings = []
 
     for budget in budgets:
+
+        # Calculates how much has been spent in the category.
         spent_result = (
             db.session.query(func.coalesce(func.sum(Expense.amount), 0.0))
             .filter(
@@ -211,10 +264,13 @@ def get_overall_budget_warnings(user_id, month, year, limit=5):
         )
 
         spent = float(spent_result or 0.0)
+
         remaining = float(budget.amount - spent)
 
+        # Calculates budget usage percentage.
         if budget.amount > 0:
             percentage_used = round((spent / budget.amount) * 100, 1)
+
         else:
             percentage_used = 0.0
 
@@ -229,15 +285,18 @@ def get_overall_budget_warnings(user_id, month, year, limit=5):
             "status_class": get_status_class(percentage_used),
         })
 
+    # Sorts warnings from most severe to least severe.
     warnings.sort(key=lambda item: item["percentage_used"], reverse=True)
+
     return warnings[:limit]
 
-
+# Returns all years that contain budgets for the user.
 def get_available_budget_years(user_id):
     """
     Return a list of years that have budgets for the user.
     Includes the current year even if there are no budgets yet.
     """
+
     current_year = date.today().year
 
     rows = (
@@ -250,16 +309,18 @@ def get_available_budget_years(user_id):
 
     years = [row[0] for row in rows]
 
+    # Ensures the current year always appears in the filter dropdown.
     if current_year not in years:
         years.insert(0, current_year)
 
     return years
 
-
+# Returns all account books belonging to the user.
 def get_user_account_books(user_id):
     """
     Return all account books for the user ordered by name.
     """
+
     return (
         AccountBook.query
         .filter_by(user_id=user_id)

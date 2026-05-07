@@ -1,3 +1,8 @@
+/* --------------------------
+   DASHBOARD CHART PLACEHOLDER
+-------------------------- */
+
+/* Displayed when chart data is unavailable */
 .dashboard-chart-placeholder {
     min-height: 260px;
     border: 2px dashed #cbd5e1;
@@ -10,9 +15,19 @@
     padding: 24px;
 }
 
+
+/* --------------------------
+   MONTH DROPDOWN FILTER
+-------------------------- */
+
 .month-dropdown {
     position: relative;
 }
+
+
+/* --------------------------
+   DROPDOWN BUTTON
+-------------------------- */
 
 .month-dropdown-toggle {
     min-width: 210px;
@@ -30,6 +45,7 @@
     box-shadow: none;
 }
 
+/* Disabled when "All Years" is selected */
 .month-dropdown-toggle:disabled {
     background-color: #e9ecef;
     color: #6c757d;
@@ -37,6 +53,11 @@
     cursor: not-allowed;
     opacity: 1;
 }
+
+
+/* --------------------------
+   DROPDOWN MENU
+-------------------------- */
 
 .month-dropdown-menu {
     position: absolute;
@@ -52,9 +73,15 @@
     display: none;
 }
 
+/* Displays the dropdown menu when active */
 .month-dropdown-menu.show {
     display: block;
 }
+
+
+/* --------------------------
+   DROPDOWN ACTION BUTTONS
+-------------------------- */
 
 .month-dropdown-actions {
     display: flex;
@@ -63,6 +90,11 @@
     padding-bottom: 8px;
     border-bottom: 1px solid #eef2f6;
 }
+
+
+/* --------------------------
+   MONTH CHECKBOX LIST
+-------------------------- */
 
 .month-checkbox-list {
     display: grid;

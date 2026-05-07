@@ -6,9 +6,7 @@ import pandas as pd
 from io import StringIO, BytesIO, TextIOWrapper
 import zipfile
 
-
 csv_bp = Blueprint('csv', __name__)
-
 
 ALLOWED_CATEGORIES = {
     'income': ['Salary', 'Part Time', 'Freelance', 'Allowance', 'Refund', 'Gift', 'Other'],
@@ -25,8 +23,6 @@ def format_column_name(col):
         return col[0].upper() + col[1:].lower()
     
     return col.upper()
-
-
 
 def format_category(cat_str):
 
@@ -48,13 +44,11 @@ def format_category(cat_str):
     
     return ' '.join(formatted_words)
 
-
 def validate_and_create_transaction(row, current_book_id):
     # verify type
     transaction_type = str(row['Type']).lower().strip()
     if transaction_type not in ['income', 'expense']:
         raise ValueError(f"Invalid type '{row['type']}'. Must be 'Income' or 'Expense'. ")
-    
 
     # Parse Date
     date_str = str(row['Date']).strip()
@@ -80,7 +74,6 @@ def validate_and_create_transaction(row, current_book_id):
     if date.date() > today:
         raise ValueError(f"Date '{date_str}' cannot be in the future. ")
     
-
     # verify amount
     try:
         amount = float(row['Amount'])
@@ -89,7 +82,6 @@ def validate_and_create_transaction(row, current_book_id):
     except:
         raise ValueError(f"Invalid amount '{row['Amount']}'. Please enter a positive number. ")
     
-
     # verify category 
     # make all category type to be: first character capital, rest lowercase
     category = format_category(str(row['Category']))
@@ -102,13 +94,11 @@ def validate_and_create_transaction(row, current_book_id):
         allowed_str = ', '.join(allowed)
         raise ValueError(f"Category '{category}' is not valid for {transaction_type}. Allowed: {allowed_str}. ")
 
-
     # verify description
     description = str(row['Description']).strip()
     if not description:
         raise ValueError(f"Description cannot be empty. ")
     
-
     # create transaction
     if transaction_type == 'income':
         return Income(
@@ -127,8 +117,6 @@ def validate_and_create_transaction(row, current_book_id):
             date=date,
             account_book_id=current_book_id
         )
-
-
 
 @csv_bp.route('/import', methods=['POST'])
 @login_required
@@ -163,14 +151,12 @@ def import_csv():
         
         if not current_book:
             flash('Invalid account book selected. ', 'danger')
-            return redirect(url_for('transactions'))
-        
+            return redirect(url_for('transactions'))   
         
         # read CSV file, useing TextIOWrapper
         stream = TextIOWrapper(file.stream, encoding='utf-8-sig')
         df = pd.read_csv(stream)
         
-
         # verify colums
         df.columns = [format_column_name(col) for col in df.columns]
 
@@ -180,8 +166,6 @@ def import_csv():
         if missing_columns:
             flash(f'CSV is missing required columns: {", ".join(missing_columns)}. ', 'danger')
             return redirect(url_for('transactions'))
-        
-
 
         # import data and verify the format of the CSV file
         valid_transactions = []
@@ -196,7 +180,6 @@ def import_csv():
             except Exception as e:
                 errors.append(f"Row {index+2}: {str(e)}")
         
-
         if errors:
             # only should the first 5 error message
             error_msg = f'Import cancelled. Found {len(errors)} error(s):\n'
@@ -206,7 +189,6 @@ def import_csv():
             flash(error_msg, 'danger')
             return redirect(url_for('transactions'))
         
-        
         for transaction in valid_transactions:
             db.session.add(transaction)
         
@@ -214,18 +196,12 @@ def import_csv():
         
         flash(f'Successfully imported {len(valid_transactions)} transactions into "{current_book.bookname}". ', 'success')
         return redirect(url_for('transactions'))
-        
 
     except Exception as e:
         db.session.rollback()
         flash(f'Error importing CSV: {str(e)}', 'danger')
         return redirect(url_for('transactions'))
     
-
-
-
-
-
 @csv_bp.route('/template')
 @login_required
 def download_template():
@@ -246,9 +222,6 @@ def download_template():
     response.headers['Content-Type'] = 'text/csv; charset=utf-8-sig'
     
     return response
-
-
-
 
 @csv_bp.route('/export_multiple', methods=['POST'])
 @login_required
@@ -281,9 +254,7 @@ def export_multiple():
         flash(f'Error exporting: {str(e)}', 'danger')
         return redirect(url_for('transactions'))
 
-
 def export_as_single_csv(books):
-    
     all_transactions = []
     
     for book in books:
@@ -367,14 +338,7 @@ def export_as_single_csv(books):
     flash(f'Exported {len(all_transactions)} transactions from {len(books)} account books (combined file).', 'success')
     return response
 
-
-
-
-
-
-
 def export_as_zip(books):
-
     zip_buffer = BytesIO()
     exported_count = 0
     

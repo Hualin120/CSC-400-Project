@@ -1,3 +1,8 @@
+/* --------------------------
+   PROFILE AVATAR IMAGE
+-------------------------- */
+
+/* Main profile picture displayed on the profile page */
 .avatar-img {
     width: 200px;
     height: 200px;
@@ -6,17 +11,29 @@
     border: 3px solid #2563eb;
 }
 
+
+/* --------------------------
+   AVATAR SECTION
+-------------------------- */
+
 .avatar-section {
     text-align: center;
     margin: 20px 0;
     position: relative;
 }
 
+/* Wrapper used for positioning the avatar overlay */
 .avatar-section > div {
     display: inline-block;
     position: relative;
 }
 
+
+/* --------------------------
+   AVATAR OVERLAY
+-------------------------- */
+
+/* Dark overlay shown when hovering over the avatar image */
 .avatar-overlay {
     position: absolute;
     top: 0;
@@ -34,6 +51,7 @@
     font-size: 14px;
 }
 
+/* Displays the overlay when the user hovers over the avatar */
 .avatar-section > div:hover .avatar-overlay {
     opacity: 1;
 }

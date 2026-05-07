@@ -1,34 +1,51 @@
+// -------------------
+// EXPORT / IMPORT MODALS
+// -------------------
 function openExportModal() {
+    // Opens the export modal.
     document.getElementById('exportModal').style.display = 'block';
 }
 
 function closeExportModal() {
+    // Closes the export modal.
     document.getElementById('exportModal').style.display = 'none';
 }
 
 function openImportModal() {
+    // Opens the import modal.
     document.getElementById('importModal').style.display = 'block';
 }
 
 function closeImportModal() {
+    // Closes the import modal.
     document.getElementById('importModal').style.display = 'none';
 }
 
+// -------------------
+// ACCOUNT BOOK MODAL
+// -------------------
 function openCreateBookModal() {
+    // Opens the create account book modal.
     document.getElementById('createBookModal').style.display = 'block';
 }
 
 function closeCreateBookModal() {
+    // Closes the create account book modal.
     document.getElementById('createBookModal').style.display = 'none';
 }
 
+// -------------------
+// SCROLL POSITION
+// -------------------
 const transactionScrollStorageKey = "transactionsScrollPosition";
 
 function saveTransactionScrollPosition() {
+    // Saves the user's current scroll position before the page reloads.
     sessionStorage.setItem(transactionScrollStorageKey, window.scrollY);
 }
 
 function restoreTransactionScrollPosition() {
+    // Restores the user's previous scroll position after the page reloads.
     const savedScrollPosition = sessionStorage.getItem(transactionScrollStorageKey);
 
     if (savedScrollPosition !== null) {
@@ -37,7 +54,11 @@ function restoreTransactionScrollPosition() {
     }
 }
 
+// -------------------
+// TRANSACTION CATEGORIES
+// -------------------
 function getCategoriesByType(type) {
+    // Returns the correct category list based on whether the transaction is income or expense.
     const incomeCategories = [
         'Salary',
         'Part Time',
@@ -67,14 +88,18 @@ function getCategoriesByType(type) {
 }
 
 function populateModalCategoryOptions(type, selectedCategory) {
+    // Fills the edit modal category dropdown with the correct category options.
     const modalCategory = document.getElementById('modalCategory');
+
     if (!modalCategory) return;
 
     const categories = getCategoriesByType(type);
+
     modalCategory.innerHTML = '';
 
     categories.forEach(category => {
         const option = document.createElement('option');
+
         option.value = category;
         option.textContent = category;
 
@@ -86,10 +111,18 @@ function populateModalCategoryOptions(type, selectedCategory) {
     });
 }
 
+// -------------------
+// TRANSACTION EDIT MODAL STATE
+// -------------------
+
+// Stores the original transaction values when the modal opens.
 let transactionModalInitialState = null;
+
+// Tracks whether the user has edited anything inside the modal.
 let transactionModalDirty = false;
 
 function getTransactionModalState() {
+    // Gets the current values from the transaction edit modal.
     return {
         type: document.getElementById('modalTransactionType').value,
         amount: document.getElementById('modalAmount').value,
@@ -100,6 +133,7 @@ function getTransactionModalState() {
 }
 
 function updateTransactionModalDirtyState() {
+    // Compares the current modal values with the original values.
     if (!transactionModalInitialState) {
         transactionModalDirty = false;
         return;
@@ -116,10 +150,12 @@ function updateTransactionModalDirtyState() {
 }
 
 function attemptCloseTransactionModal() {
+    // Warns the user before closing if there are unsaved changes.
     updateTransactionModalDirtyState();
 
     if (transactionModalDirty) {
         const confirmed = confirm('Discard your unsaved changes?');
+
         if (!confirmed) return;
     }
 
@@ -127,6 +163,7 @@ function attemptCloseTransactionModal() {
 }
 
 function openTransactionModal(button) {
+    // Opens the edit transaction modal and fills it with data from the selected transaction.
     const type = button.dataset.type;
     const id = button.dataset.id;
     const category = button.dataset.category;
@@ -151,26 +188,32 @@ function openTransactionModal(button) {
 }
 
 function closeTransactionModal(forceClose = false) {
+    // Closes the edit transaction modal.
     if (!forceClose) {
         attemptCloseTransactionModal();
         return;
     }
 
     document.getElementById('transactionModal').style.display = 'none';
+
     transactionModalInitialState = null;
     transactionModalDirty = false;
 }
 
 function confirmDeleteTransaction() {
+    // Confirms before deleting a transaction.
     const type = document.getElementById('modalTransactionType').value;
     const id = document.getElementById('modalTransactionId').value;
 
     const confirmed = confirm('Are you sure you want to delete this transaction? This cannot be undone.');
+
     if (!confirmed) return;
 
     const form = document.createElement('form');
+
     form.method = 'POST';
     form.action = `/delete_transaction/${type}/${id}`;
+
     document.body.appendChild(form);
 
     saveTransactionScrollPosition();
@@ -178,12 +221,21 @@ function confirmDeleteTransaction() {
     form.submit();
 }
 
+// -------------------
+// EXPORT CHECKBOXES
+// -------------------
 function selectAll(select) {
+    // Selects or deselects all account book checkboxes in the export form.
     const checkboxes = document.querySelectorAll('#exportForm input[name="book_ids"]');
+
     checkboxes.forEach(cb => cb.checked = select);
 }
 
+// -------------------
+// ADD TRANSACTION CATEGORY DROPDOWN
+// -------------------
 function updateCategoryOptions() {
+    // Updates the category dropdown when the transaction type changes.
     const typeSelect = document.querySelector('select[name="type"]');
     const categorySelect = document.querySelector('select[name="category"]');
 
@@ -222,13 +274,19 @@ function updateCategoryOptions() {
 
     categories.forEach(cat => {
         const option = document.createElement('option');
+
         option.value = cat.value;
         option.textContent = cat.label;
+
         categorySelect.appendChild(option);
     });
 }
 
+// -------------------
+// MONTH DROPDOWN FILTER
+// -------------------
 function setupMonthDropdown(config) {
+    // Creates a reusable month dropdown for selecting multiple months.
     var dropdownButton = document.getElementById(config.buttonId);
     var dropdownMenu = document.getElementById(config.menuId);
     var selectAllBtn = document.getElementById(config.selectAllId);
@@ -239,20 +297,25 @@ function setupMonthDropdown(config) {
     var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     function getCheckedCount() {
+        // Counts how many month checkboxes are selected.
         var checkedCount = 0;
+
         monthCheckboxes.forEach(function (checkbox) {
             if (checkbox.checked) checkedCount++;
         });
+
         return checkedCount;
     }
 
     function syncAllCheckbox() {
+        // Checks the "All Months" box only when all 12 months are selected.
         if (allMonthsCheckbox) {
             allMonthsCheckbox.checked = getCheckedCount() === 12;
         }
     }
 
     function updateButtonText() {
+        // Updates the dropdown button text based on selected months.
         if (!dropdownButton) return;
 
         if (yearSelect && yearSelect.value === "all") {
@@ -261,6 +324,7 @@ function setupMonthDropdown(config) {
         }
 
         var checked = [];
+
         monthCheckboxes.forEach(function (checkbox) {
             if (checkbox.checked) checked.push(parseInt(checkbox.value, 10));
         });
@@ -276,12 +340,16 @@ function setupMonthDropdown(config) {
 
     if (dropdownButton && dropdownMenu) {
         dropdownButton.addEventListener("click", function (e) {
+            // Opens or closes the month dropdown.
             if (dropdownButton.disabled) return;
+
             e.stopPropagation();
+
             dropdownMenu.classList.toggle("show");
         });
 
         document.addEventListener("click", function (e) {
+            // Closes the dropdown when the user clicks outside of it.
             if (!dropdownMenu.contains(e.target) && !dropdownButton.contains(e.target)) {
                 dropdownMenu.classList.remove("show");
             }
@@ -290,9 +358,11 @@ function setupMonthDropdown(config) {
 
     if (selectAllBtn) {
         selectAllBtn.addEventListener("click", function () {
+            // Selects all months.
             monthCheckboxes.forEach(function (checkbox) {
                 checkbox.checked = true;
             });
+
             syncAllCheckbox();
             updateButtonText();
         });
@@ -300,9 +370,11 @@ function setupMonthDropdown(config) {
 
     if (clearAllBtn) {
         clearAllBtn.addEventListener("click", function () {
+            // Clears all selected months.
             monthCheckboxes.forEach(function (checkbox) {
                 checkbox.checked = false;
             });
+
             syncAllCheckbox();
             updateButtonText();
         });
@@ -310,15 +382,18 @@ function setupMonthDropdown(config) {
 
     if (allMonthsCheckbox) {
         allMonthsCheckbox.addEventListener("change", function () {
+            // Selects or deselects every month based on the All Months checkbox.
             monthCheckboxes.forEach(function (checkbox) {
                 checkbox.checked = allMonthsCheckbox.checked;
             });
+
             updateButtonText();
         });
     }
 
     monthCheckboxes.forEach(function (checkbox) {
         checkbox.addEventListener("change", function () {
+            // Updates the dropdown label when individual months are changed.
             syncAllCheckbox();
             updateButtonText();
         });
@@ -326,6 +401,7 @@ function setupMonthDropdown(config) {
 
     if (yearSelect) {
         yearSelect.addEventListener("change", function () {
+            // If All Years is selected, months are automatically set to all months.
             if (yearSelect.value === "all") {
                 monthCheckboxes.forEach(function (checkbox) {
                     checkbox.checked = true;
@@ -335,6 +411,7 @@ function setupMonthDropdown(config) {
 
                 if (dropdownMenu) dropdownMenu.classList.remove("show");
                 if (dropdownButton) dropdownButton.disabled = true;
+
             } else {
                 if (dropdownButton) dropdownButton.disabled = false;
             }
@@ -347,26 +424,38 @@ function setupMonthDropdown(config) {
     updateButtonText();
 }
 
+// -------------------
+// TRANSACTION TABLE SORTING
+// -------------------
+
+// Keeps track of whether each table column is sorted ascending or descending.
 const tableSortDirections = {};
 
 function parseDate(dateStr) {
+    // Converts a date string into a JavaScript Date object for sorting.
     const parts = dateStr.split('/');
+
     return new Date(parts[2], parts[0] - 1, parts[1]);
 }
 
 function parseAmount(amountStr) {
+    // Converts a formatted dollar amount into a number for sorting.
     return parseFloat(amountStr.replace(/[$,]/g, '')) || 0;
 }
 
 function sortTable(tableId, columnIndex, type) {
+    // Sorts a transaction table by the selected column.
     const table = document.getElementById(tableId);
+
     if (!table) return;
 
     const tbody = table.querySelector('tbody');
     const rows = Array.from(tbody.querySelectorAll('tr'));
 
     const sortKey = `${tableId}-${columnIndex}`;
+
     tableSortDirections[sortKey] = !tableSortDirections[sortKey];
+
     const ascending = tableSortDirections[sortKey];
 
     rows.sort((a, b) => {
@@ -386,10 +475,12 @@ function sortTable(tableId, columnIndex, type) {
     });
 
     rows.forEach(row => tbody.appendChild(row));
+
     updateSortArrows(table, columnIndex, ascending);
 }
 
 function updateSortArrows(table, activeColumn, ascending) {
+    // Updates the arrow indicators to show the active sort direction.
     const headers = table.querySelectorAll('th');
 
     headers.forEach((th, index) => {
@@ -413,16 +504,23 @@ function updateSortArrows(table, activeColumn, ascending) {
     });
 }
 
+// -------------------
+// PAGE INITIALIZATION
+// -------------------
 document.addEventListener("DOMContentLoaded", function() {
+    // Restores scroll position after actions like adding, editing, deleting, or filtering.
     restoreTransactionScrollPosition();
 
     const typeSelect = document.querySelector('select[name="type"]');
 
     if (typeSelect) {
+        // Initializes category dropdown behavior for the add transaction form.
         updateCategoryOptions();
+
         typeSelect.addEventListener('change', updateCategoryOptions);
     }
 
+    // Initializes the transaction timeframe month dropdown.
     setupMonthDropdown({
         buttonId: "transactionMonthDropdownButton",
         menuId: "transactionMonthDropdownMenu",
@@ -433,6 +531,9 @@ document.addEventListener("DOMContentLoaded", function() {
         yearSelectId: "year"
     });
 
+    // -------------------
+    // TRANSACTION MODAL BUTTONS
+    // -------------------
     const closeTransactionModalBtn = document.getElementById('closeTransactionModalBtn');
 
     if (closeTransactionModalBtn) {
@@ -457,6 +558,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    // -------------------
+    // MODAL CHANGE TRACKING
+    // -------------------
     const modalAmount = document.getElementById('modalAmount');
     const modalCategory = document.getElementById('modalCategory');
     const modalDescription = document.getElementById('modalDescription');
@@ -464,11 +568,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     [modalAmount, modalCategory, modalDescription, modalDate].forEach(field => {
         if (field) {
+            // Tracks changes so the user can be warned before closing the modal.
             field.addEventListener('input', updateTransactionModalDirtyState);
             field.addEventListener('change', updateTransactionModalDirtyState);
         }
     });
 
+    // -------------------
+    // SAVE SCROLL BEFORE FORM SUBMITS
+    // -------------------
     const editTransactionForm = document.getElementById('editTransactionForm');
 
     if (editTransactionForm) {
@@ -494,6 +602,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    // -------------------
+    // CHART DATA FROM TEMPLATE
+    // -------------------
     const chartLabelsElement = document.getElementById("book-chart-labels");
     const incomeDataElement = document.getElementById("book-chart-income-data");
     const expenseDataElement = document.getElementById("book-chart-expense-data");
@@ -519,6 +630,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
+    // Parses chart values that were passed from Flask into the template.
     const labels = JSON.parse(chartLabelsElement.textContent);
     const incomeData = JSON.parse(incomeDataElement.textContent);
     const expenseData = JSON.parse(expenseDataElement.textContent);
@@ -529,9 +641,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const expenseCategoryData = JSON.parse(expenseCategoryDataElement.textContent);
 
     const ctx = canvas.getContext("2d");
+
     let currentChart;
 
     function pieTooltipLabel(context) {
+        // Creates tooltip labels that show the dollar amount and percentage.
         const data = context.dataset.data || [];
         const total = data.reduce((sum, value) => sum + Number(value || 0), 0);
         const value = Number(context.raw || 0);
@@ -541,6 +655,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function buildChartConfig(chartType) {
+        // Builds the Chart.js settings based on the selected chart type.
         if (chartType === "line") {
             return {
                 type: "line",
@@ -655,6 +770,7 @@ document.addEventListener("DOMContentLoaded", function() {
             };
         }
 
+        // Default chart is the income vs. expenses bar chart.
         return {
             type: "bar",
             data: {
@@ -707,6 +823,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function renderChart(chartType) {
+        // Removes the old chart before drawing the new chart.
         if (currentChart) {
             currentChart.destroy();
         }
@@ -714,11 +831,16 @@ document.addEventListener("DOMContentLoaded", function() {
         currentChart = new Chart(ctx, buildChartConfig(chartType));
     }
 
+    // -------------------
+    // CHART TYPE PERSISTENCE
+    // -------------------
+
     const transactionChartStorageKey = "transactionChartType";
     const validTransactionChartTypes = ["bar", "line", "incomePie", "expensePie"];
 
     let savedTransactionChartType = localStorage.getItem(transactionChartStorageKey);
 
+    // Defaults to bar chart if the saved chart type is invalid.
     if (!validTransactionChartTypes.includes(savedTransactionChartType)) {
         savedTransactionChartType = "bar";
     }
@@ -731,7 +853,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (chartTypeSelect) {
         chartTypeSelect.addEventListener("change", function () {
+            // Saves the selected chart type and updates the chart.
             localStorage.setItem(transactionChartStorageKey, chartTypeSelect.value);
+
             renderChart(chartTypeSelect.value);
         });
     }

@@ -16,7 +16,6 @@ from authlib.integrations.flask_client import OAuth
 from werkzeug.security import generate_password_hash
 import secrets
 
-
 auth_bp = Blueprint('auth', __name__)
 
 oauth = OAuth()
@@ -34,7 +33,6 @@ def get_google_oauth():
         server_metadata_url=GOOGLE_METADATA_URL,
         client_kwargs={'scope': 'openid profile email'},
     )
-
 
 '''
 When user click login with google, it will trigger this Blueprint route. Given information from def get_google_oauth(),
@@ -67,8 +65,6 @@ def login_google():
         current_app.logger.error(f"Error during login: {str(e)}")
         flash("Google login failed. Please try again.", "danger")
         return redirect(url_for('login'))
-    
-
 
 @auth_bp.route("/authorize/google")
 def authorize_google():
@@ -98,7 +94,6 @@ def authorize_google():
         # generate username
         name_from_google = given_name or full_name or email.split('@')[0]
         username = generate_unique_username(name_from_google)
-
 
         # check users are exist or not by email or oauth_id
         user = User.query.filter((User.email == email) | ((User.oauth_provider == 'google') & (User.oauth_id == user_info.get('sub')))).first()
@@ -141,7 +136,6 @@ def authorize_google():
 
             session['current_account_book'] = default_book.id
 
-
             flash(f"Welcome {username}! Your account has been created.", "success")
 
         else:
@@ -169,7 +163,6 @@ def authorize_google():
         current_app.logger.error(f"Error during Google authorization: {str(e)}")
         flash("Google authorization failed. Please try again.", "danger")
         return redirect(url_for('login'))
-
 
 '''
 For this, just prevent duplicate usernames. 

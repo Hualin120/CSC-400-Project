@@ -1,17 +1,35 @@
+/* --------------------------
+   TRANSACTION CHART HEADER
+-------------------------- */
+
+/* Adjusts spacing and alignment for the transaction chart title */
 .transaction-chart-title {
     line-height: 1.1;
 }
 
+
+/* --------------------------
+   TRANSACTION CHART FILTERS
+-------------------------- */
+
+/* Keeps chart filter controls the same height */
 .transaction-chart-filters .form-select,
 .transaction-chart-filters .btn,
 .transaction-chart-filters .month-dropdown-toggle {
     height: 42px;
 }
 
+/* Prevents filter labels from wrapping onto multiple lines */
 .transaction-chart-filters .form-label {
     white-space: nowrap;
 }
 
+
+/* --------------------------
+   TRANSACTION EDIT MODAL
+-------------------------- */
+
+/* Dark background overlay behind the edit modal */
 #transactionModal {
     display: none;
     position: fixed;
@@ -20,11 +38,17 @@
     z-index: 1100;
 }
 
+/* Keeps the modal content above the overlay */
 #transactionModal > div {
     position: relative;
     z-index: 1101;
     pointer-events: auto;
 }
+
+
+/* --------------------------
+   SORTABLE TRANSACTION TABLE
+-------------------------- */
 
 .sortable-table {
     width: 100%;
@@ -36,6 +60,7 @@
     vertical-align: middle;
 }
 
+/* Makes table headers clickable for sorting */
 .sortable-table th {
     cursor: pointer;
     user-select: none;
@@ -45,16 +70,24 @@
     padding-bottom: 14px;
 }
 
+
+/* --------------------------
+   TABLE COLUMN WIDTHS
+-------------------------- */
+
+/* Transaction type column */
 .sortable-table th:nth-child(1),
 .sortable-table td:nth-child(1) {
     width: 19%;
 }
 
+/* Category column */
 .sortable-table th:nth-child(2),
 .sortable-table td:nth-child(2) {
     width: 19%;
 }
 
+/* Description column */
 .sortable-table th:nth-child(3),
 .sortable-table td:nth-child(3) {
     width: 26%;
@@ -63,17 +96,88 @@
     text-overflow: ellipsis;
 }
 
+/* Amount column */
 .sortable-table th:nth-child(4),
 .sortable-table td:nth-child(4) {
     width: 18%;
 }
 
+/* Actions column */
 .sortable-table th:nth-child(5),
 .sortable-table td:nth-child(5) {
     width: 18%;
     text-align: center;
 }
 
+/* --------------------------
+   MONTH DROPDOWN FILTER
+-------------------------- */
+
+.month-dropdown {
+    position: relative;
+}
+
+/* --------------------------
+   DROPDOWN BUTTON
+-------------------------- */
+
+.month-dropdown-toggle {
+    min-width: 210px;
+    text-align: left;
+    background-color: #fff;
+    color: #212529;
+    border: 1px solid #ced4da;
+}
+
+/* --------------------------
+   DROPDOWN MENU
+-------------------------- */
+
+.month-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 1050;
+    width: 240px;
+    background: #fff;
+    border: 1px solid #dbe3ea;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 12px;
+    display: none;
+}
+
+.month-dropdown-menu.show {
+    display: block;
+}
+
+.month-dropdown-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.month-checkbox-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+}
+
+.month-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin: 0;
+}
+/* --------------------------
+   SORTING ARROWS
+-------------------------- */
+
+/* Positions the sorting arrows beside the table header text */
 .sort-arrow {
     display: inline-flex;
     flex-direction: column;
@@ -92,10 +196,12 @@
     line-height: 0.9;
 }
 
+/* Adds spacing between the up and down arrows */
 .sort-arrow .arrow-up {
     margin-bottom: 2px;
 }
 
+/* Changes arrow color when hovering over sortable headers */
 .sortable-table th:hover .sort-arrow span {
     color: #2563eb;
 }
