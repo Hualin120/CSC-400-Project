@@ -1,9 +1,14 @@
 from datetime import datetime, timedelta
 from flask import flash
-from models import db, EmailToken, sha256
+from models import db, EmailToken
 from utils.email_utils import send_email
+import hashlib
 
+# Generates a SHA256 hash version of a value for security purposes.
+def sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
+# Builds the HTML email template used for email verification codes.
 def build_verify_email_html(username: str, code: str) -> str:
     return f"""
     <div style="margin:0;padding:0;background-color:#f4f6f9;font-family:Arial,sans-serif;">
@@ -60,6 +65,7 @@ def build_verify_email_html(username: str, code: str) -> str:
     </div>
     """
 
+# Builds the HTML email template for password reset emails.
 def build_reset_password_html(username: str, reset_link: str) -> str:
     return f"""
     <div style="margin:0;padding:0;background-color:#f4f6f9;font-family:Arial,sans-serif;">
@@ -127,11 +133,18 @@ def build_reset_password_html(username: str, reset_link: str) -> str:
     </div>
     """
 
+# Creates a new verification token and invalidates previous unused ones.
 def create_verify_token(user_id: int, minutes_valid: int = 10):
+
+    # Marks older verification tokens as used so only the newest code works.
     EmailToken.query.filter_by(user_id=user_id, purpose="verify", used=False).update({"used": True})
+
     db.session.commit()
 
+    # Generates a new 6-digit OTP code.
     code = EmailToken.new_otp()
+
+    # Stores the hashed version of the verification code in the database.
     tok = EmailToken(
         user_id=user_id,
         purpose="verify",
@@ -139,33 +152,49 @@ def create_verify_token(user_id: int, minutes_valid: int = 10):
         expires_at=datetime.utcnow() + timedelta(minutes=minutes_valid),
         used=False
     )
+
     db.session.add(tok)
     db.session.commit()
+
     return code
 
-
+# Sends the verification email to the user.
 def send_verification_code(user, subject: str, flash_on_success: str | None = None):
+
+    # Creates a new verification code.
     code = create_verify_token(user.id)
+
+    # Builds the HTML email content.
     html = build_verify_email_html(user.username, code)
 
     try:
         send_email(user.email, subject, html, to_name=user.username)
+
+        # Displays an optional flash message after successful sending.
         if flash_on_success:
             flash(flash_on_success, "info")
+
     except Exception as e:
         print("Mailjet send failed:", e)
+
         flash("We couldn't send the verification email right now.", "warning")
 
-
+# Limits how many verification codes can be requested within a time window.
 def can_resend_verify_code(user_id: int, max_in_window: int = 3, window_minutes: int = 15):
+
+    # Defines the starting point for the resend rate-limit window.
     window_start = datetime.utcnow() - timedelta(minutes=window_minutes)
 
-    recent_count = (EmailToken.query
-                    .filter(
-                        EmailToken.user_id == user_id,
-                        EmailToken.purpose == "verify",
-                        EmailToken.created_at >= window_start
-                    )
-                    .count())
+    # Counts how many verification tokens were created recently.
+    recent_count = (
+        EmailToken.query
+        .filter(
+            EmailToken.user_id == user_id,
+            EmailToken.purpose == "verify",
+            EmailToken.created_at >= window_start
+        )
+        .count()
+    )
 
+    # Returns True if the user is still below the resend limit.
     return recent_count < max_in_window

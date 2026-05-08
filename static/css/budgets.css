@@ -1,6 +1,6 @@
-/* ==========================
-   Budget Page Styles
-========================== */
+/* --------------------------
+   BUDGET PAGE STYLES
+-------------------------- */
 
 .budget-card {
     border-radius: 16px;
@@ -14,8 +14,9 @@
 
 
 /* --------------------------
-   Summary Cards
+   SUMMARY CARDS
 -------------------------- */
+
 .budget-summary-card {
     border-radius: 14px;
     background: #ffffff;
@@ -27,8 +28,9 @@
 
 
 /* --------------------------
-   Progress Bar
+   PROGRESS BAR
 -------------------------- */
+
 .budget-progress {
     height: 20px;
     border-radius: 10px;
@@ -42,41 +44,48 @@
 
 
 /* --------------------------
-   Status Colors (Optional polish)
+   PROGRESS BAR STATUS COLORS
 -------------------------- */
+
+/* Budget is within a safe spending range */
 .progress-bar.bg-success {
     background-color: #28a745 !important;
 }
 
+/* Budget is close to the spending limit */
 .progress-bar.bg-warning {
     background-color: #ffc107 !important;
     color: #000;
 }
 
+/* Budget has exceeded the limit */
 .progress-bar.bg-danger {
     background-color: #dc3545 !important;
 }
 
 
 /* --------------------------
-   Buttons
+   BUTTONS
 -------------------------- */
+
 .btn-sm {
     border-radius: 8px;
 }
 
 
 /* --------------------------
-   Empty State
+   EMPTY STATE
 -------------------------- */
+
 .card-body.text-center h5 {
     font-weight: 600;
 }
 
 
 /* --------------------------
-   Form spacing tweaks
+   FORM STYLING
 -------------------------- */
+
 .form-label {
     font-size: 0.85rem;
     font-weight: 500;
@@ -84,13 +93,20 @@
 
 
 /* --------------------------
-   Responsive tweaks
+   RESPONSIVE DESIGN
 -------------------------- */
+
 @media (max-width: 768px) {
+
     .budget-card {
         padding: 10px;
     }
 }
+
+
+/* --------------------------
+   EDIT BUDGET MODAL
+-------------------------- */
 
 .budget-modal-overlay {
     position: fixed;
@@ -113,6 +129,11 @@
     position: relative;
 }
 
+
+/* --------------------------
+   MODAL HEADER
+-------------------------- */
+
 .budget-modal-header {
     display: flex;
     align-items: center;
@@ -126,6 +147,11 @@
     font-weight: 800;
     color: #0f172a;
 }
+
+
+/* --------------------------
+   MODAL CLOSE BUTTON
+-------------------------- */
 
 .budget-modal-close {
     border: none;
@@ -141,12 +167,19 @@
     opacity: 0.8;
 }
 
+
+/* --------------------------
+   MODAL ACTION BUTTONS
+-------------------------- */
+
 .budget-modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 14px;
 }
 
+
+/* Prevents background scrolling while the modal is open */
 body.modal-open {
     overflow: hidden;
 }
