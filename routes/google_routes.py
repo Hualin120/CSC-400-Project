@@ -42,7 +42,7 @@ nonce just like hash password. It's an important security mechanisms. For exampl
 the staff will give you a random code(maybe?) when you buy the ticket. When you play any rides, they will ask the code, without it
 you cannot play it.
 
-If someone steal your ticket, but don't have the code, they can't impersonate you.
+If someone steals your ticket, but does not have the code, they cannot impersonate you.
 '''
 @auth_bp.route('/login/google')
 def login_google():
