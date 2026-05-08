@@ -153,9 +153,9 @@ def import_csv():
             flash('Invalid account book selected. ', 'danger')
             return redirect(url_for('transactions'))   
         
-        # read CSV file, useing TextIOWrapper
-        stream = TextIOWrapper(file.stream, encoding='utf-8-sig')
-        df = pd.read_csv(stream)
+        # read CSV file
+        csv_text = file.read().decode('utf-8-sig')
+        df = pd.read_csv(StringIO(csv_text))
         
         # verify colums
         df.columns = [format_column_name(col) for col in df.columns]
