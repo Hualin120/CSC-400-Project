@@ -200,7 +200,7 @@ The dashboard displays financial summaries, charts, and budgeting analytics usin
 
 ## Transactions Page
 
-![Transactions Page](static/images/transaction_example.jpg)
+![Transactions Page](static/images/transactions_readMe.jpg)
 
 **Description:**  
 The transactions page allows users to manage income and expense records with filtering and chart functionality.
