@@ -180,21 +180,12 @@ https://spendsenseapp.com
 
 # Screenshots
 
-## Landing Page
-
-![Landing Page](images/landing-page.png)
-
-**Description:**  
-The landing page introduces users to SpendSense and provides access to login and registration functionality.
-
----
-
 ## Dashboard
 
-![Dashboard](images/dashboard.png)
+![Dashboard](static/images/dashboard_readMe.jpg)
 
 **Description:**  
-The dashboard displays financial summaries, charts, and budgeting analytics using interactive visualizations.
+The dashboard showcases the user’s financial overview of all account books and transactions. The dashboard contains financial metrics of all account books, recent income and expense transactions, a list of all account books, and interactive charts and timeframe filters allow users to analyze their spending habits and financial trends.
 
 ---
 
@@ -203,10 +194,18 @@ The dashboard displays financial summaries, charts, and budgeting analytics usin
 ![Transactions Page](static/images/transactions_readMe.jpg)
 
 **Description:**  
-The transactions page allows users to manage income and expense records with filtering and chart functionality.
+The transactions page allows users to view, add, edit, and delete income and expense transactions. Users can filter transactions by timeframe and category while viewing visual charts that summarize transaction activity. 
 
 ---
 
+## Budgets Page
+
+![Budgets Page](static/images/budget_readMe.jpg)
+
+**Description:**  
+On the budgets page, the users can create and adjust their monthly budget category, monitor the remaining and spent amounts of each category, and see when spending exceeds budget limit.
+
+---
 # Future Improvements
 
 Potential future improvements for SpendSense include:
@@ -216,4 +215,6 @@ Potential future improvements for SpendSense include:
 - Recurring transaction support
 - Admin dashboard functionality
 - Additional chart and reporting features
+- Receipt scanning for transaction input
+- Bank account connectivity
 
